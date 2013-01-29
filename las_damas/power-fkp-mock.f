@@ -1,34 +1,38 @@
       implicit none 
       integer Ngrid,ix,iy,iz,Nbins,nyq,iky,ikz,imk,i,Ibin,Ng,Nr
-      parameter(Ngrid=1536,Nbins=768)
+      parameter(Ngrid=240,Nbins=120)
       complex, allocatable :: dcg(:,:,:),dcr(:,:,:)
 c      complex dcg(Ngrid/2+1,Ngrid,Ngrid),dcr(Ngrid/2+1,Ngrid,Ngrid)
       real avgk(Nbins),avgPg(Nbins),avgPr(Nbins),co(Nbins),rk,dk(Nbins)
       real avgPg2(Nbins),avgPr2(Nbins),avgPg4(Nbins),avgPr4(Nbins)
       character filecoef*200,filecoefr*200,filepower*200
-      character randfft*200,lssfft*200,powername*200
+      character fftrand*200,fftmock*200,powername*200,sscale*200
       real akfun,I10,I12,I22,I13,I23,I33,P0,alpha,P0m
       real cot1,coga,Le2,Le4,pk
       complex ct
       
-      write(*,*) 'Random Fourier file :'
-      read(*,'(a)') filecoefr
-      randfft='/mount/chichipio2/hahn/FFT/'//filecoefr
-      write(*,*) 'LSS/Mock Fourier file :'
-      read(*,'(a)') filecoef
-      lssfft='/mount/chichipio2/hahn/FFT/'//filecoef
-      write(*,*) 'INPUT Power Spectrum file :'
-      read(*,'(a)') filepower
-      powername='/mount/chichipio2/hahn/power/'//filepower
-      write(*,*)'Survey scale (Mpc/h)'
-      read(*,*) akfun      
+!      write(*,*) 'Random Fourier file :'
+      call getarg(1,fftrand)
+      filecoefr='/mount/chichipio2/hahn/FFT/las_damas/'//fftrand
+!      read(*,'(a)') filecoefr
+!      write(*,*) 'LSS/Mock Fourier file :'
+      call getarg(2,fftmock)
+      filecoef='/mount/chichipio2/hahn/FFT/las_damas/'//fftmock
+!      read(*,'(a)') filecoef
+!      write(*,*) 'INPUT Power Spectrum file :'
+      call getarg(3,powername)
+      filepower='/mount/chichipio2/hahn/power/las_damas/'//powername
+!      write(*,*)'Survey scale (Mpc/h)'
+      call getarg(4,sscale)
+      read(sscale,*) akfun
+
       allocate(dcg(Ngrid/2+1,Ngrid,Ngrid),dcr(Ngrid/2+1,Ngrid,Ngrid))
 
-      open(unit=4,file=lssfft,status='old',form='unformatted')
+      open(unit=4,file=filecoef,status='old',form='unformatted')
       read(4)dcg
       read(4)P0m,Ng 
       close(4)
-      open(unit=4,file=randfft,status='old',form='unformatted')
+      open(unit=4,file=filecoefr,status='old',form='unformatted')
       read(4)dcr
       read(4)I10,I12,I22,I13,I23,I33
       read(4)P0,Nr
@@ -89,10 +93,9 @@ c      complex dcg(Ngrid/2+1,Ngrid,Ngrid),dcr(Ngrid/2+1,Ngrid,Ngrid)
                end if
  100  continue
       akfun=6.28319/akfun
-      open(4,file=powername,status='unknown',form='formatted')
+      open(4,file=filepower,status='unknown',form='formatted')
       do 110 Ibin=1,Nbins
          if(co(Ibin).gt.0.)then
-!             print *, 'avgk(ibin)', avgk(Ibin), 'co(Ibin)=', co(Ibin)
             avgk(Ibin)=avgk(Ibin)/co(Ibin)*akfun
             avgPg(Ibin)=(avgPg(Ibin)/co(Ibin)-(1.+alpha)*I12)/I22
             avgPr(Ibin)=avgPr(Ibin)/co(Ibin) 
@@ -107,6 +110,6 @@ c      complex dcg(Ngrid/2+1,Ngrid,Ngrid),dcr(Ngrid/2+1,Ngrid,Ngrid)
  110  continue
       close(4)
  1015 format(2x,9e16.6)
-      
+      write(*,*) filepower
       stop
       end
