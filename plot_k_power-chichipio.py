@@ -5,65 +5,44 @@ from scipy import interpolate
 
 will  = np.loadtxt('gCMASS_all.lpow')
 
-path  = '/global/data/scr/chh327/powercode/power/'
-#Nanderson = np.loadtxt(path+'cmass-dr10v3-N-Anderson_ge_POWER.dat')
-#Nandersonw = np.loadtxt(path+'cmass-dr10v3-N-Anderson_POWER.dat')
-#Sanderson = np.loadtxt(path+'cmass-dr10v3-S-Anderson_POWER.dat')
+path = '/mount/chichipio2/hahn/power/'
 
-N_zlim_galsys=np.loadtxt(path+'power-cmass-dr10v5-N-Anderson-nzw-zlim-960grid-480bin.dat')
-#np.loadtxt(path+'cmass-dr10v5-N-Anderson_nzw_960_480_power.dat')
+N = np.loadtxt(path+'power-cmass-dr10v5-N-Anderson-nzw-960grid-480bin.dat')
+Nzlim = np.loadtxt(path+'power-cmass-dr10v5-N-Anderson-nzw-zlim-960grid-480bin.dat')
+Nzlimngalsys = np.loadtxt(path+'power-cmass-dr10v5-N-Anderson-nzw-zlim-ngalsys-960grid-480bin.dat')
 
-S_zlim_galsys=np.loadtxt(path+'power-cmass-dr10v5-S-Anderson-nzw-zlim-960grid-480bin.dat')
 ###################################################################################
 #Power spectra Comparison
 
 py.figure(1,figsize=(16,8))
-#py.subplot(121)
 plt.plot(np.log10(will[:,1]), np.log10(will[:,2]),'k--', linewidth=2, label="Percival's DR10 P(k)")
 #plt.plot(np.log10(N[:,0]),np.log10(N[:,1]),'r', linewidth=3, label='P(k) for N-Anderson 960,480')
-#plt.plot(np.log10(Nw[:,0]),np.log10(Nw[:,1]),'b--', linewidth=3, label='P(k) for N-Anderson 960,480 w_star')
-#plt.plot(np.log10(Nmod[:,0]),np.log10(Nmod[:,1]),'r', linewidth=3, label='P(k) for N-Anderson 960,480')
-plt.plot(np.log10(N_zlim_galsys[:,0]),np.log10(N_zlim_galsys[:,1]),'r',linewidth=3,label='P(k) N 960,480+nzw+Ngalsys+zlim')
+plt.plot(np.log10(Nzlimngalsys[:,0]),np.log10(Nzlimngalsys[:,1]),'b--', linewidth=3, label='P(k) for N-Anderson 960,480 Original Assign+Ngalsys+z-lim')
+plt.plot(np.log10(Nzlim[:,0]),np.log10(Nzlim[:,1]),'r--', linewidth=3, label='P(k) for N-Anderson 960,480 Original Assign+z-lim')
+
+#plt.plot(np.log10(N[:,0]),np.log10(N[:,4]),'g', linewidth=3, label='P_r(k) for N-Anderson 960,480')
+#plt.plot(np.log10(Nmod[:,0]),np.log10(Nmod[:,1]),'b--', linewidth=3, label='P(k) for N-Anderson 960,480 Modified Power code')
 #py.xlim([-2.3,0.0])
-py.ylim([3.2,5.3])
+#py.ylim([3.2,5.3])
 py.xlabel('k', fontsize=15)
 py.ylabel('P(k)', fontsize=15)
 plt.grid(True)
 py.legend(loc='lower left', prop={'size':12})
 
+
 py.figure(2,figsize=(16,8))
-plt.plot(np.log10(will[:,1]), np.log10(will[:,2]),'k--', linewidth=2, label="Percival's DR10 P(k)")
-plt.plot(np.log10(S_zlim_galsys[:,0]),np.log10(S_zlim_galsys[:,1]),'r',linewidth=3,label='P(k) S 960,480+nzw+Ngalsys+zlim')
-py.ylim([3.2,5.3])
+intpolwill = interpolate.interp1d(will[:,1],will[:,2],kind='quadratic')(Nzlim[:,0])
+#intpolSw = interpolate.interp1d(Sw[:,0],Sw[:,1],kind='quadratic')(S[:,0])
+
+#py.subplot(121)
+plt.plot(np.log10(Nzlim[:,0]),intpolwill/Nzlim[:,1],linewidth=3,label='N-Anderson 960,480')
+py.xlim([-2.3,0.0])
+#py.ylim([0.75,1.10])
 py.xlabel('k', fontsize=15)
-py.ylabel('P(k)', fontsize=15)
-plt.grid(True)
-py.legend(loc='lower left', prop={'size':12})
+py.ylabel("(Will's P(k))/(P(k),original assign,z-lim",fontsize=15)
+py.legend(loc='lower right', prop={'size':12})
 py.show()
 """
-py.subplot(122)
-plt.plot(np.log10(will[:,1]), np.log10(will[:,2]),'k--', linewidth=2, label="Percival's DR10 P(k)")
-plt.plot(np.log10(S[:,0]),np.log10(S[:,1]),'g', linewidth=3, label='P(k) for S-Anderson 960,480')
-plt.plot(np.log10(Sw[:,0]),np.log10(Sw[:,1]),'m--', linewidth=3, label='P(k) for S-Anderson 960,480 w_star')
-py.xlim([-2.3,0.0])
-py.ylim([3.2,5.3])
-py.xlabel('k', fontsize=15)
-py.ylabel('P(k)', fontsize=15)
-plt.grid(True)
-py.legend(loc='lower left', prop={'size':12})
-
-py.figure(2,figsize=(16,8))
-intpolNw = interpolate.interp1d(Nw[:,0],Nw[:,1],kind='quadratic')(N[:,0])
-intpolSw = interpolate.interp1d(Sw[:,0],Sw[:,1],kind='quadratic')(S[:,0])
-
-py.subplot(121)
-plt.plot(np.log10(N[:,0]),intpolNw/N[:,1],linewidth=3,label='N-Anderson 960,480')
-py.xlim([-2.3,0.0])
-py.ylim([0.75,1.10])
-py.xlabel('k', fontsize=15)
-py.ylabel('P(k)-wstar/P(k)',fontsize=15)
-py.legend(loc='lower right', prop={'size':12})
-
 py.subplot(122)
 plt.plot(np.log10(S[:,0]),intpolSw/S[:,1],linewidth=3,label='S-Anderson 960,480')
 py.xlim([-2.3,0.0])
@@ -72,7 +51,6 @@ py.xlabel('k', fontsize=15)
 py.ylabel('P(k)-wstar/P(k)',fontsize=15)
 py.legend(loc='lower right', prop={'size':12})
 
-py.show()
 ###################################################################################
 #Anisotropy of NS
 

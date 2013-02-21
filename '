@@ -1,0 +1,384 @@
+      implicit none  !as FFT_FKP_SDSS_LRG_new but removes some hard-cored choices
+      integer Nsel,Nran,i,iwr,Ngal,Nmax,n,kx,ky,kz,Lm,Ngrid,ix,iy,iz,j,k
+      integer Ng,Nr,iflag,ic,Nbin, l
+      integer*8 planf,plan_real
+      real pi,cspeed
+      parameter(Nsel=201,Nmax=2*10**8,Ngrid=10,Nbin=151)
+      parameter(pi=3.141592654)
+      integer grid
+      dimension grid(3)
+      parameter(cspeed=299800.0)
+      integer, allocatable :: ig(:),ir(:)
+      real zbin(Nbin),dbin(Nbin),sec3(Nbin),zt,dum,gfrac
+      real cz,Om0,OL0,sec2(Nsel),chi,nbar,Rbox
+      real, allocatable :: nbg(:),nbr(:),rg(:,:),rr(:,:),wg(:),wr(:)
+      real selfun(Nsel),z(Nsel),sec(Nsel),zmin,zmax,az,ra,dec,rad,numden
+      real w,nbb,wsys
+      real alpha,P0,nb,weight,ar,akf,Fr,Fi,Gr,Gi
+      real*8 I10,I12,I22,I13,I23,I33
+      real kdotr,vol,xscale,rlow,rm(2)
+      complex, allocatable :: dcg(:,:,:),dcr(:,:,:)
+      character selfunfile*200,lssfile*200,randomfile*200,filecoef*200
+      character spltest*200,fname*200,outname*200
+      character dcgfile*200,dcrfile*200,dcgfname*200,dcrfname*200
+      common /interpol/z,selfun,sec
+      common /interpol2/ra,sec2
+      common /interp3/dbin,zbin,sec3
+      common /radint/Om0,OL0
+      common /Nrandom/Nran
+      external nbar,chi,nbar2,PutIntoBox,assign2,fcomb
+      include 'fftw_f77.i'
+      grid(1) = Ngrid
+      grid(2) = Ngrid
+      grid(3) = Ngrid
+      call rfftw3d_f77_create_plan(plan_real,Ngrid,Ngrid,Ngrid,
+     & FFTW_REAL_TO_COMPLEX,FFTW_ESTIMATE + FFTW_IN_PLACE)
+
+      Om0=0.27
+      OL0=0.73
+      zmax=1.1
+      do ic=1,Nbin
+         zt=zmax*float(ic-1)/float(Nbin-1)
+         zbin(ic)=zt
+         dbin(ic)=chi(zt)
+      enddo
+      call spline(dbin,zbin,Nbin,3e30,3e30,sec3)
+
+c      write(*,*)'semibox side (like radius of sphere)'
+c      read(*,*)Rbox
+      Rbox = 4000.0
+      Lm=Ngrid
+      xscale=2.*RBox
+      
+      rlow=-Rbox
+         rm(1)=float(Lm)/xscale
+         rm(2)=1.-rlow*rm(1)
+      
+      write(*,*)'mock (0) or random mock(1)?'
+      read(*,*)iflag
+c      write(*,*)'FKP weight P0?'
+c      read(*,*)P0
+      P0=20000.0
+      call spline(z,selfun,Nsel,3e30,3e30,sec)
+
+      if (iflag.eq.0) then ! run on mock
+      
+         write(*,*)'Mock Survey File'
+         read(*,'(a)')lssfile
+         fname='/mount/chichipio2/hahn/data/'//lssfile 
+         allocate(rg(3,Nmax),nbg(Nmax),ig(Nmax),wg(Nmax))
+         open(unit=4,file=fname,status='old',form='formatted')
+         Ngal=0 !Ngal will get determined later after survey is put into a box (Ng)
+         wsys=0.0 
+         do i=1,Nmax
+            read(4,*,end=13)ra,dec,az,w,nbb
+            ra=ra*(pi/180.)
+            dec=dec*(pi/180.)
+            rad=chi(az)
+            !Completeness Weight of the galaxy
+            wg(i)=w
+            rg(1,i)=rad*cos(dec)*cos(ra)
+            rg(2,i)=rad*cos(dec)*sin(ra)
+            rg(3,i)=rad*sin(dec)
+            nbg(i)=nbb
+            Ngal=Ngal+1
+            wsys=wsys+w*(1.0+nbb*P0)
+         enddo
+ 13      continue
+!         close(7)
+         close(4)
+
+         call PutIntoBox(Ngal,rg,Rbox,ig,Ng,Nmax)
+         gfrac=100. *float(Ng)/float(Ngal)
+         write(*,*)'Number of Galaxies in Box=',Ng,gfrac,'percent'
+       
+
+         allocate(dcg(Ngrid/2+1,Ngrid,Ngrid))
+         call assign_CIC(Ngal,rg,rm,Lm,dcg,wg)
+         write(*,*) 'assign done!'
+         write(*,*) 'DCG Output file:'
+         read(*,'(a)') dcgfile
+         dcgfname='/mount/chichipio2/hahn/FFT/'//dcgfile
+         OPEN(UNIT=4,FILE=dcgfname,STATUS='unknown',FORM='formatted')
+         DO iz=1,Ngrid
+            DO iy=1,Ngrid
+                DO ix=1,Ngrid/2+1
+                    WRITE(4,1015) ix,iy,iz,real(dcg(ix,iy,iz))
+     &              ,aimag(dcg(ix,iy,iz))
+                ENDDO
+            ENDDO
+         ENDDO
+         CLOSE(4)
+ 1015    FORMAT(3(2x,I3),2x,E16.6,2x,E16.6)
+         
+         write(*,*)'doing fft'
+         call rfftwnd_f77_one_real_to_complex(plan_real,dcg,dcg)
+         write(*,*) 'FFT done!'
+         call correct(Lm,Lm,Lm,dcg) !correct density for interpolation
+         write(*,*) 'recombination done!'
+
+         write(*,*) 'Fourier file :'
+         read(*,'(a)') filecoef
+         outname='/mount/chichipio2/hahn/FFT/'//filecoef
+         open(unit=4,file=outname,status='unknown',form='unformatted')
+         write(4)(((dcg(ix,iy,iz),ix=1,Lm/2+1),iy=1,Lm),iz=1,Lm)
+         write(4)P0,Ng,wsys
+         close(4)
+
+       elseif (iflag.eq.1) then ! compute discretness integrals and FFT random mock
+         write(*,*)'Random Survey File'
+         read(*,'(a)')randomfile
+         fname='/mount/chichipio2/hahn/data/'//randomfile
+         allocate(rr(3,Nmax),nbr(Nmax),ir(Nmax),wr(Nmax))
+         open(unit=4,file=fname,status='old',form='formatted')
+         Nran=0 !Ngal will get determined later after survey is put into a box (Nr)
+         do i=1,Nmax
+            read(4,*,end=15)ra,dec,az,w,nbb
+            ra=ra*(pi/180.)
+            dec=dec*(pi/180.)
+            rad=chi(az)
+            rr(1,i)=rad*cos(dec)*cos(ra)
+            rr(2,i)=rad*cos(dec)*sin(ra)
+            rr(3,i)=rad*sin(dec)
+            nbr(i)=nbb
+            wr(i) =w
+            Nran=Nran+1
+         enddo
+ 15      continue
+         close(4)
+      
+         call PutIntoBox(Nran,rr,Rbox,ir,Nr,Nmax)
+         gfrac=100. *float(Nr)/float(Nran)
+         write(*,*)'Number of Random in Box=',Nr,gfrac,'percent'
+
+         I10=0.d0
+         I12=0.d0
+         I22=0.d0
+         I13=0.d0
+         I23=0.d0
+         I33=0.d0
+         do i=1,Nr
+            nb=nbr(i)  
+            weight=wr(i)
+            !1./(1.+nb*P0) 
+            I10=I10+1.d0
+            I12=I12+dble(weight**2)
+            I22=I22+dble(nb*weight**2)
+            I13=I13+dble(weight**3)
+            I23=I23+dble(nb*weight**3 )
+            I33=I33+dble(nb**2 *weight**3)
+         enddo
+         write(*,*)'the following need to be scaled by alpha later'
+         write(*,*)'I10=',I10,'I12=',I12,'I22=',I22
+         write(*,*)'I13=',I13,'I23=',I23,'I33=',I33
+
+         allocate(dcr(Ngrid/2+1,Ngrid,Ngrid))
+         call assign_CIC(Nran,rr,rm,Lm,dcr,wr)
+         write(*,*) 'assign done!'
+
+         WRITE(*,*) 'DCR Output file:'
+         READ(*,'(a)') dcrfile
+         dcrfname='/mount/chichipio2/hahn/FFT/'//dcrfile
+         OPEN(UNIT=4,FILE=dcrfname,STATUS='unknown',FORM='formatted')
+         DO iz=1,Ngrid
+            DO iy=1,Ngrid
+                DO ix=1,Ngrid/2+1
+                    WRITE(4,1035) ix,iy,iz,real(dcr(ix,iy,iz))
+     &              ,aimag(dcr(ix,iy,iz))
+                ENDDO
+            ENDDO
+         ENDDO
+         CLOSE(4)
+ 1035    FORMAT(3(2x,I16),2x,E16.6,2x,E16.6)
+
+         call rfftwnd_f77_one_real_to_complex(plan_real,dcr,dcr)
+         write(*,*) 'FFT done!'
+         call correct(Lm,Lm,Lm,dcr) !correct density for interpolation
+         write(*,*) 'recombination done!'
+
+         write(*,*) 'Fourier file :'
+         read(*,'(a)') filecoef
+         outname='/mount/chichipio2/hahn/FFT/'//filecoef
+         open(unit=4,file=outname,status='unknown',form='unformatted')
+         write(4)(((dcr(ix,iy,iz),ix=1,Lm/2+1),iy=1,Lm),iz=1,Lm)
+         write(4)real(I10),real(I12),real(I22),real(I13),real(I23),
+     &   real(I33)
+         write(4)P0,Nr
+         close(4)
+         
+      endif
+      
+
+ 1025 format(2x,6e14.6)
+ 123  stop
+      end
+cc*******************************************************************
+      subroutine assign_CIC(Npar,r,rm,Lm,dtl,wg)
+cc*******************************************************************
+      integer Lm,ixp,iyp,izp,ixa,iya,iza
+      real r(3,Npar),rm(2),wg(Npar)
+      real dtl(Lm/2+1,Lm,Lm)
+      real dx,dy,dz,rx,ry,rz
+c
+      do i=1,Npar
+         rx=rm(1)*r(1,i)+rm(2)
+         ry=rm(1)*r(2,i)+rm(2)
+         rz=rm(1)*r(3,i)+rm(2)
+         ixp=int(rx)
+         iyp=int(ry)
+         izp=int(rz)
+         dx=rx-real(ixp)
+         dy=ry-real(iyp)
+         dz=rz-real(izp)
+         ixa=mod(ixp,Lm)+1
+         iya=mod(iyp,Lm)+1
+         iza=mod(izp,Lm)+1
+
+         dtl(ixa,iya,iza) = dtl(ixa,iya,iza)+dx*dy*dz *wg(i)
+         dtl(ixa,iya,izp) = dtl(ixa,iya,izp)+dx*dy*(1.-dz) *wg(i)
+
+         dtl(ixp,iya,iza) = dtl(ixp,iya,iza)+(1.-dx)*dy*dz *wg(i)
+         dtl(ixp,iya,izp) = dtl(ixp,iya,izp)+(1.-dx)*dy*(1.-dz) *wg(i)
+
+         dtl(ixa,iyp,iza) = dtl(ixa,iyp,iza)+dx*(1.-dy)*dz *wg(i)
+         dtl(ixa,iyp,izp) = dtl(ixa,iyp,izp)+dx*(1.-dy)*(1.-dz) *wg(i)
+
+         dtl(ixp,iyp,iza) = dtl(ixp,iyp,iza)+(1.-dx)*(1.-dy)*dz *wg(i)
+         dtl(ixp,iyp,izp) = dtl(ixp,iyp,izp)+(1.-dx)*(1.-dy)*(1.-dz)
+     $    *wg(i)
+      enddo
+
+      return
+      end
+cc*******************************************************************
+      subroutine correct(Lx,Ly,Lz,dtl)
+cc*******************************************************************
+      complex dtl(Lx/2+1,Ly,Lz)
+      real rkz,rky,rkx,tpiLx,tpiLy,tpiLz,Wkz,Wky,Wkx,cf,cfac
+      integer icz,icy,icx,iflag
+      iflag=2
+
+      tpi=6.283185307
+      cf=1.
+      tpiLx=tpi/float(Lx)
+      tpiLy=tpi/float(Ly)
+      tpiLz=tpi/float(Lz)
+      do 300 iz=1,Lz/2+1
+         icz=mod(Lz-iz+1,Lz)+1
+         rkz=tpiLz*float(iz-1)
+         Wkz=1.
+         if(rkz.ne.0.)Wkz=(sin(rkz/2.)/(rkz/2.))**iflag
+         do 300 iy=1,Ly/2+1
+            icy=mod(Ly-iy+1,Ly)+1
+            rky=tpiLy*float(iy-1)
+            Wky=1.
+            if(rky.ne.0.)Wky=(sin(rky/2.)/(rky/2.))**iflag
+            do 300 ix=1,Lx/2+1
+               rkx=tpiLx*float(ix-1)
+               Wkx=1.
+               if(rkx.ne.0.)Wkx=(sin(rkx/2.)/(rkx/2.))**iflag
+               cfac=cf/(Wkx*Wky*Wkz)
+               dtl(ix,iy,iz)=dtl(ix,iy,iz)*cfac
+               if(iz.ne.icz) dtl(ix,iy,icz)=dtl(ix,iy,icz)*cfac
+               if(iy.ne.icy) dtl(ix,icy,iz)=dtl(ix,icy,iz)*cfac
+               if(iz.ne.icz .and. iy.ne.icy) then
+                  dtl(ix,icy,icz)=dtl(ix,icy,icz)*cfac
+               endif
+ 300              continue
+      return
+      end
+c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      Subroutine PutIntoBox(Ng,rg,Rbox,ig,Ng2,Nmax)
+c^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      implicit none
+      integer Nmax
+      integer Ng,Ng2,j,i,ig(Nmax)
+      real rg(3,Nmax),Rbox,acheck
+      j=0
+      do i=1,Ng
+         acheck=abs(rg(1,i))+abs(rg(2,i))+abs(rg(3,i))
+         if (acheck.gt.0.) then 
+            if (abs(rg(1,i)).lt.Rbox .and. abs(rg(2,i)).lt.Rbox .and. 
+     $           abs(rg(3,i)).lt.Rbox) then !put into box
+               j=j+1
+               ig(i)=1
+            else
+               ig(i)=0
+            endif
+         else
+            ig(i)=0
+         endif
+      enddo
+      Ng2=j
+      RETURN
+      END
+c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      REAL function nbar(QQ,iflag) !nbar(z)
+c^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      parameter(Nsel=201)!80)
+      integer iflag
+      real z(Nsel),selfun(Nsel),sec(Nsel),self,az,qq,area_ang
+      common /interpol/z,selfun,sec
+      common/radint/Om0,OL0
+      common /zbounds/zmin,zmax
+      real Om0,OL0
+      external chi
+      az=QQ
+c      if (az.lt.zmin-0.05 .or. az.gt.0.47) then
+      if (az.lt.0.0 .or. az.gt.1.5) then
+         nbar=0.
+      else
+         call splint(z,selfun,sec,Nsel,az,self)
+c         self=2.4e-5 ! 21.8
+c         self=9.5e-5 ! 21.2 and full?
+         if (iflag.eq.0) then
+            nbar=self !for clustered mock
+         else
+            nbar=self ! for 10x random mock
+         endif
+      endif
+      RETURN
+      END
+c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      REAL function zdis(ar) !interpolation redshift(distance)
+c^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      parameter(Nbin=151)
+      common /interp3/dbin,zbin,sec3
+      real dbin(Nbin),zbin(Nbin),sec3(Nbin)
+      call splint(dbin,zbin,sec3,Nbin,ar,zdis)
+      RETURN
+      END
+c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      REAL function chi(x) !radial distance in Mpc/h as a function of z
+c^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      real*8 qmin,qmax,ans,rdi,epsabs,epsrel,abserr
+      parameter (limit=1000)
+      integer neval,ier,iord(limit),last
+      real*8 alist(limit),blist(limit),elist(limit),rlist(limit)
+      external rdi,dqage
+      common/radint/Om0,OL0
+      qmin=0.d0
+      qmax=dble(x)
+      epsabs=0.d0
+      epsrel=1.d-2                                                            
+      call dqage(rdi,qmin,qmax,epsabs,epsrel,30,limit,ans,abserr,
+     $ neval,ier,alist,blist,rlist,elist,iord,last)
+      chi=real(ans)
+      RETURN
+      END
+c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      real*8 function rdi(z) !radial distance integrand
+c^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      common/radint/Om0,OL0
+      real Om0,OL0
+      real*8 z
+      rdi=3000.d0/dsqrt(OL0+(1.d0-Om0-OL0)*(1.d0+z)**2+Om0*(1.d0+z)**3)
+      return
+      end
+c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      include 'dqage.f'
+      include 'd1mach.f'
+      include 'dqawfe.f'
+      include 'spline.f'
+      include 'splint.f'
+      include 'gabqx.f'

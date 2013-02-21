@@ -1,115 +1,584 @@
-      implicit none 
-      integer Ngrid,ix,iy,iz,Nbins,nyq,iky,ikz,imk,i,Ibin,Ng,Nr
-      parameter(Ngrid=240,Nbins=120)
+      implicit none  !as FFT_FKP_SDSS_LRG_new but removes some hard-cored choices
+      integer Nsel,Nran,i,iwr,Ngal,Nmax,n,kx,ky,kz,Lm,Ngrid,ix,iy,iz,j,k
+      integer Ng,Nr,iflag,ic,Nbin, l
+      integer*8 planf
+      real pi,cspeed,Om0,OL0
+      parameter(Nsel=40,Nmax=2*10**8,Ngrid=240,Nbin=151,pi=3.141592654)
+      parameter(Om0=0.27,OL0=0.73)
+      integer grid
+      dimension grid(3)
+      parameter(cspeed=299800.0)
+      integer, allocatable :: ig(:),ir(:)
+      real zbin(Nbin),dbin(Nbin),sec3(Nbin),zt,dum,gfrac
+      real cz,sec2(Nsel),chi,nbar,Rbox
+      real, allocatable :: nbg(:),nbr(:),rg(:,:),rr(:,:) 
+      real selfun(Nsel),z(Nsel),sec(Nsel),zmin,zmax,az,ra,dec,rad,numden
+      real alpha,P0,nb,weight,ar,akf,Fr,Fi,Gr,Gi
+      real*8 I10,I12,I22,I13,I23,I33
+      real kdotr,vol,xscale,rlow,rm(2)
       complex, allocatable :: dcg(:,:,:),dcr(:,:,:)
-c      complex dcg(Ngrid/2+1,Ngrid,Ngrid),dcr(Ngrid/2+1,Ngrid,Ngrid)
-      real avgk(Nbins),avgPg(Nbins),avgPr(Nbins),co(Nbins),rk,dk(Nbins)
-      real avgPg2(Nbins),avgPr2(Nbins),avgPg4(Nbins),avgPr4(Nbins)
-      character filecoef*200,filecoefr*200,filepower*200
-      character fftrand*200,fftmock*200,powername*200,sscale*200
-      real akfun,I10,I12,I22,I13,I23,I33,P0,alpha,P0m
-      real cot1,coga,Le2,Le4,pk
-      complex ct
-      
-!      write(*,*) 'Random Fourier file :'
-      call getarg(1,fftrand)
-      filecoefr='/mount/chichipio2/hahn/FFT/las_damas/'//fftrand
-!      read(*,'(a)') filecoefr
-!      write(*,*) 'LSS/Mock Fourier file :'
-      call getarg(2,fftmock)
-      filecoef='/mount/chichipio2/hahn/FFT/las_damas/'//fftmock
-!      read(*,'(a)') filecoef
-!      write(*,*) 'INPUT Power Spectrum file :'
-      call getarg(3,powername)
-      filepower='/mount/chichipio2/hahn/power/las_damas/'//powername
-!      write(*,*)'Survey scale (Mpc/h)'
-      call getarg(4,sscale)
-      read(sscale,*) akfun
+c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
+      character selfunfile*200,lssfile*200,randomfile*200,filecoef*200
+      character spltest*200
+      character fname*200,fftname*200
+      character Rboxstr*200,iflagstr*200,P0str*200
+      common /interpol/z,selfun,sec
+      common /interpol2/ra,sec2
+      common /interp3/dbin,zbin,sec3
+      common /Nrandom/Nran
+      external nbar,chi,nbar2,PutIntoBox,assign2,fcomb
+      include '/home/users/hahn/powercode/fftw_f77.i'
+      grid(1) = Ngrid
+      grid(2) = Ngrid
+      grid(3) = Ngrid
+      call fftwnd_f77_create_plan(planf,3,grid,FFTW_BACKWARD,
+     $     FFTW_ESTIMATE + FFTW_IN_PLACE)
 
-      allocate(dcg(Ngrid/2+1,Ngrid,Ngrid),dcr(Ngrid/2+1,Ngrid,Ngrid))
-
-      open(unit=4,file=filecoef,status='old',form='unformatted')
-      read(4)dcg
-      read(4)P0m,Ng 
-      close(4)
-      open(unit=4,file=filecoefr,status='old',form='unformatted')
-      read(4)dcr
-      read(4)I10,I12,I22,I13,I23,I33
-      read(4)P0,Nr
-      close(4)
-      if (P0m.ne.P0) then
-         write(*,*)'P0s do not match'
-         stop
-      endif
-      alpha=float(Ng)/float(Nr) !now scale random integrals by alpha
-      I10=I10*alpha
-      I12=I12*alpha
-      I22=I22*alpha
-      I13=I13*alpha
-      I23=I23*alpha
-      I33=I33*alpha
-      nyq=float(Ngrid/2)
-      do 10 i=1,Nbins
-         avgk(i)=0.
-         avgPg(i)=0.
-         avgPr(i)=0.
-         avgPg2(i)=0.
-         avgPr2(i)=0.
-         avgPg4(i)=0.
-         avgPr4(i)=0.
-         co(i)=0.
- 10   continue
-      do iz=1,Ngrid
-         do iy=1,Ngrid
-            do ix=1,Ngrid/2+1
-               dcg(ix,iy,iz)=dcg(ix,iy,iz)-alpha*dcr(ix,iy,iz)
-            enddo
-         enddo
+      zmax=1.1
+      do ic=1,Nbin
+         zt=zmax*float(ic-1)/float(Nbin-1)
+         zbin(ic)=zt
+         dbin(ic)=chi(zt)
       enddo
-      do 100 iz=1,Ngrid
-         ikz=mod(iz+Ngrid/2-2,Ngrid)-Ngrid/2+1
-         do 100 iy=1,Ngrid
-            iky=mod(iy+Ngrid/2-2,Ngrid)-Ngrid/2+1
-            do 100 ix=1,Ngrid/2+1
-               rk=sqrt(real((ix-1)**2+iky**2+ikz**2))
-               imk=nint(Nbins*rk/nyq)
-               if(imk.le.Nbins .and. imk.ne.0)then
-                  cot1=real(ikz)/rk
-                  coga=cot1 !use z-direction as redshift mapping
-                  Le2=-5.e-1+1.5e0*coga**2
-                  Le4=3.75e-1-3.75e0*coga**2+4.375e0*coga**4
-                  co(imk)=co(imk)+1.
-                  avgk(imk)=avgk(imk)+rk                  
-                  ct=dcg(ix,iy,iz)
-                  pk=(cabs(ct))**2
-                  avgPg(imk)=avgPg(imk)+pk
-                  avgPg2(imk)=avgPg2(imk)+pk*5.*Le2
-                  avgPg4(imk)=avgPg4(imk)+pk*9.*Le4                  
-                  ct=alpha*dcr(ix,iy,iz)
-                  pk=(cabs(ct))**2
-                  avgPr(imk)=avgPr(imk)+pk
-                  avgPr2(imk)=avgPr2(imk)+pk*5.*Le2
-                  avgPr4(imk)=avgPr4(imk)+pk*9.*Le4                  
-               end if
- 100  continue
-      akfun=6.28319/akfun
-      open(4,file=filepower,status='unknown',form='formatted')
-      do 110 Ibin=1,Nbins
-         if(co(Ibin).gt.0.)then
-            avgk(Ibin)=avgk(Ibin)/co(Ibin)*akfun
-            avgPg(Ibin)=(avgPg(Ibin)/co(Ibin)-(1.+alpha)*I12)/I22
-            avgPr(Ibin)=avgPr(Ibin)/co(Ibin) 
-            avgPg2(Ibin)=avgPg2(Ibin)/co(Ibin)/I22
-            avgPr2(Ibin)=avgPr2(Ibin)/co(Ibin)/I22 
-            avgPg4(Ibin)=avgPg4(Ibin)/co(Ibin)/I22
-            avgPr4(Ibin)=avgPr4(Ibin)/co(Ibin)/I22 
-            dk(Ibin)=avgPg(Ibin)*avgk(Ibin)**3 /19.7392 
-      write(4,1015) avgk(Ibin),avgPg(Ibin),avgPg2(Ibin),avgPg4(Ibin),
-     &   avgPr(Ibin),avgPr2(Ibin),avgPr4(Ibin),dk(Ibin),co(Ibin)
-      end if
- 110  continue
-      close(4)
- 1015 format(2x,9e16.6)
-      write(*,*) filepower
-      stop
+      call spline(dbin,zbin,Nbin,3e30,3e30,sec3)
+!Arguments: Rbox, Mock/Random, P0, File, FFT file
+!      write(*,*)'semibox side (like radius of sphere)'
+      call getarg(1,Rboxstr)
+      read(Rboxstr,*) Rbox
+
+      Lm=Ngrid
+      xscale=2.*RBox
+      rlow=-Rbox
+    
+      rm(1)=float(Lm)/xscale
+      rm(2)=1.-rlow*rm(1)
+      
+!      write(*,*)'mock (0) or random mock(1)?'
+      call getarg(2,iflagstr)
+      read(iflagstr,*) iflag
+
+!      write(*,*)'FKP weight P0?'
+      call getarg(3,P0str) 
+      read(P0str,*) P0
+
+ 12   continue
+
+      if (iflag.eq.0) then ! run on mock
+      
+!         write(*,*)'Mock Survey File'
+         call getarg(4,lssfile)
+         fname='/mount/chichipio2/rs123/'//
+     &   'MOCKS/LRGFull_zm_geo/gaussian/zspace/'//lssfile 
+         allocate(rg(3,Nmax),nbg(Nmax),ig(Nmax))
+         open(unit=4,file=fname,status='old',form='formatted')
+         Ngal=0 !Ngal will get determined later after survey is put into a box (Ng)
+        
+         do i=1,Nmax
+            read(4,*,end=13)ra,dec,az
+            az = az/cspeed
+            ra=ra*(pi/180.)
+            dec=dec*(pi/180.)
+            rad=chi(az)
+            rg(1,i)=rad*cos(dec)*cos(ra)
+            rg(2,i)=rad*cos(dec)*sin(ra)
+            rg(3,i)=rad*sin(dec)
+            nbg(i)=nbar(az,iflag)
+            Ngal=Ngal+1
+         enddo
+ 13      continue
+c         close(7)
+         close(4)
+
+         call PutIntoBox(Ngal,rg,Rbox,ig,Ng,Nmax)
+         gfrac=100. *float(Ng)/float(Ngal)
+!         write(*,*)'Number of Galaxies in Box=',Ng,gfrac,'percent'
+       
+
+         allocate(dcg(Ngrid,Ngrid,Ngrid))
+         call assign(Ngal,rg,rm,Lm,dcg,P0,nbg,ig)
+!         write(*,*) 'assign done!'
+	     call fftwnd_f77_one(planf,dcg,dcg)      
+!         write(*,*) 'FFT done!'
+         call fcomb(Lm,dcg,Ng)
+!         write(*,*) 'recombination done!'
+
+!         write(*,*) 'Fourier file :'
+         call getarg(5,filecoef)
+         fftname='/mount/chichipio2/hahn/FFT/las_damas/'//filecoef
+         write(*,*) fftname
+         open(unit=4,file=fftname,status='unknown',form='unformatted')
+         write(4)(((dcg(ix,iy,iz),ix=1,Lm/2+1),iy=1,Lm),iz=1,Lm)
+         write(4)P0,Ng         
+         close(4)
+
+       elseif (iflag.eq.1) then ! compute discretness integrals and FFT random mock
+!         write(*,*)'Random Survey File'
+         call getarg(4,randomfile)
+         fname='/mount/chichipio2/rs123/MOCKS/randoms/'//randomfile
+         allocate(rr(3,Nmax),nbr(Nmax),ir(Nmax))
+         open(unit=4,file=fname,status='old',form='formatted')
+         Nran=0 !Ngal will get determined later after survey is put into a box (Nr)
+         do i=1,Nmax
+            read(4,*,end=15)ra,dec,az
+            az = az/cspeed
+            ra=ra*(pi/180.)
+            dec=dec*(pi/180.)
+            rad=chi(az)
+            rr(1,i)=rad*cos(dec)*cos(ra)
+            rr(2,i)=rad*cos(dec)*sin(ra)
+            rr(3,i)=rad*sin(dec)
+            nbr(i)=nbar(az,iflag)
+            Nran=Nran+1
+         enddo
+ 15      continue
+         close(4)
+      
+         call PutIntoBox(Nran,rr,Rbox,ir,Nr,Nmax)
+         gfrac=100. *float(Nr)/float(Nran)
+!         write(*,*)'Number of Random in Box=',Nr,gfrac,'percent'
+
+         I10=0.d0
+         I12=0.d0
+         I22=0.d0
+         I13=0.d0
+         I23=0.d0
+         I33=0.d0
+         do i=1,Nr
+            nb=nbr(i)  
+            weight=1./(1.+nb*P0) 
+            I10=I10+1.d0
+            I12=I12+dble(weight**2)
+            I22=I22+dble(nb*weight**2)
+            I13=I13+dble(weight**3)
+            I23=I23+dble(nb*weight**3 )
+            I33=I33+dble(nb**2 *weight**3)
+         enddo
+! !        write(*,*)'the following need to be scaled by alpha later'
+!! !        write(*,*)'I10=',I10,'I12=',I12,'I22=',I22
+! !        write(*,*)'I13=',I13,'I23=',I23,'I33=',I33
+
+         allocate(dcr(Ngrid,Ngrid,Ngrid))
+         call assign(Nran,rr,rm,Lm,dcr,P0,nbr,ir)
+!         write(*,*) 'assign done!'
+         call fftwnd_f77_one(planf,dcr,dcr)      
+!         write(*,*) 'FFT done!'
+         call fcomb(Lm,dcr,Nr)
+!         write(*,*) 'recombination done!'
+
+!         write(*,*) 'Fourier file :'
+         call getarg(5,filecoef)
+         fftname='/mount/chichipio2/hahn/FFT/las_damas/'//filecoef
+         write(*,*) fftname
+         open(unit=4,file=fftname,status='unknown',form='unformatted')
+         write(4)(((dcr(ix,iy,iz),ix=1,Lm/2+1),iy=1,Lm),iz=1,Lm)
+         write(4)real(I10),real(I12),real(I22),real(I13),real(I23),
+     &   real(I33)
+         write(4)P0,Nr
+         close(4)
+         
+      endif
+      
+
+ 1025 format(2x,6e14.6)
+ 123  stop
       end
+c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      Subroutine PutIntoBox(Ng,rg,Rbox,ig,Ng2,Nmax)
+c^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      implicit none
+      integer Nmax
+c      parameter(Nmax=2*10**7)
+      integer Ng,Ng2,j,i,ig(Nmax)
+      real rg(3,Nmax),Rbox,acheck
+      j=0
+      do i=1,Ng
+         acheck=abs(rg(1,i))+abs(rg(2,i))+abs(rg(3,i))
+         if (acheck.gt.0.) then 
+            if (abs(rg(1,i)).lt.Rbox .and. abs(rg(2,i)).lt.Rbox .and. 
+     $           abs(rg(3,i)).lt.Rbox) then !put into box
+               j=j+1
+               ig(i)=1
+            else
+               ig(i)=0
+            endif
+         else
+            ig(i)=0
+         endif
+      enddo
+      Ng2=j
+      RETURN
+      END
+c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      subroutine assign(N,r,rm,L,dtl,P0,nbg,ig) !with FKP weighing
+cc*******************************************************************
+      real dtl(2*L,L,L),r(3,N),rm(2),we,ar,nb,nbg(N)
+      integer ig(N)
+      external nbar
+
+c
+      do 1 iz=1,L
+       do 1 iy=1,L
+        do 1 ix=1,2*L
+1        dtl(ix,iy,iz)=0.
+c
+      rca=rm(1)
+      rcb=rm(2)
+c
+      do 2 i=1,N
+      if (ig(i).eq.1) then
+
+       we=1./(1.+nbg(i)*P0) 
+
+       rx=rca*r(1,i)+rcb
+       ry=rca*r(2,i)+rcb
+       rz=rca*r(3,i)+rcb
+       tx=rx+0.5
+       ty=ry+0.5
+       tz=rz+0.5
+       ixm1=int(rx)
+       iym1=int(ry)
+       izm1=int(rz)
+       ixm2=2*mod(ixm1-2+L,L)+1
+       ixp1=2*mod(ixm1,L)+1
+       ixp2=2*mod(ixm1+1,L)+1
+       hx=rx-ixm1
+       ixm1=2*ixm1-1
+       hx2=hx*hx
+       hxm2=(1.-hx)**3
+       hxm1=4.+(3.*hx-6.)*hx2
+       hxp2=hx2*hx
+       hxp1=6.-hxm2-hxm1-hxp2
+c
+       iym2=mod(iym1-2+L,L)+1
+       iyp1=mod(iym1,L)+1
+       iyp2=mod(iym1+1,L)+1
+       hy=ry-iym1
+       hy2=hy*hy
+       hym2=(1.-hy)**3
+       hym1=4.+(3.*hy-6.)*hy2
+       hyp2=hy2*hy
+       hyp1=6.-hym2-hym1-hyp2
+c
+       izm2=mod(izm1-2+L,L)+1
+       izp1=mod(izm1,L)+1
+       izp2=mod(izm1+1,L)+1
+       hz=rz-izm1
+       hz2=hz*hz
+       hzm2=(1.-hz)**3
+       hzm1=4.+(3.*hz-6.)*hz2
+       hzp2=hz2*hz
+       hzp1=6.-hzm2-hzm1-hzp2
+c
+       nxm1=int(tx)
+       nym1=int(ty)
+       nzm1=int(tz)
+c
+       gx=tx-nxm1
+       nxm1=mod(nxm1-1,L)+1
+       nxm2=2*mod(nxm1-2+L,L)+2
+       nxp1=2*mod(nxm1,L)+2
+       nxp2=2*mod(nxm1+1,L)+2
+       nxm1=2*nxm1
+       gx2=gx*gx
+       gxm2=(1.-gx)**3
+       gxm1=4.+(3.*gx-6.)*gx2
+       gxp2=gx2*gx
+       gxp1=6.-gxm2-gxm1-gxp2
+c
+       gy=ty-nym1
+       nym1=mod(nym1-1,L)+1
+       nym2=mod(nym1-2+L,L)+1
+       nyp1=mod(nym1,L)+1
+       nyp2=mod(nym1+1,L)+1
+       gy2=gy*gy
+       gym2=(1.-gy)**3
+       gym1=4.+(3.*gy-6.)*gy2
+       gyp2=gy2*gy
+       gyp1=6.-gym2-gym1-gyp2
+c
+       gz=tz-nzm1
+       nzm1=mod(nzm1-1,L)+1
+       nzm2=mod(nzm1-2+L,L)+1
+       nzp1=mod(nzm1,L)+1
+       nzp2=mod(nzm1+1,L)+1
+       gz2=gz*gz
+       gzm2=(1.-gz)**3
+       gzm1=4.+(3.*gz-6.)*gz2
+       gzp2=gz2*gz
+       gzp1=6.-gzm2-gzm1-gzp2
+c
+       dtl(ixm2,iym2,izm2)   = dtl(ixm2,iym2,izm2)+ hxm2*hym2 *hzm2*we
+       dtl(ixm1,iym2,izm2)   = dtl(ixm1,iym2,izm2)+ hxm1*hym2 *hzm2*we
+       dtl(ixp1,iym2,izm2)   = dtl(ixp1,iym2,izm2)+ hxp1*hym2 *hzm2*we
+       dtl(ixp2,iym2,izm2)   = dtl(ixp2,iym2,izm2)+ hxp2*hym2 *hzm2*we
+       dtl(ixm2,iym1,izm2)   = dtl(ixm2,iym1,izm2)+ hxm2*hym1 *hzm2*we
+       dtl(ixm1,iym1,izm2)   = dtl(ixm1,iym1,izm2)+ hxm1*hym1 *hzm2*we
+       dtl(ixp1,iym1,izm2)   = dtl(ixp1,iym1,izm2)+ hxp1*hym1 *hzm2*we
+       dtl(ixp2,iym1,izm2)   = dtl(ixp2,iym1,izm2)+ hxp2*hym1 *hzm2*we
+       dtl(ixm2,iyp1,izm2)   = dtl(ixm2,iyp1,izm2)+ hxm2*hyp1 *hzm2*we
+       dtl(ixm1,iyp1,izm2)   = dtl(ixm1,iyp1,izm2)+ hxm1*hyp1 *hzm2*we
+       dtl(ixp1,iyp1,izm2)   = dtl(ixp1,iyp1,izm2)+ hxp1*hyp1 *hzm2*we
+       dtl(ixp2,iyp1,izm2)   = dtl(ixp2,iyp1,izm2)+ hxp2*hyp1 *hzm2*we
+       dtl(ixm2,iyp2,izm2)   = dtl(ixm2,iyp2,izm2)+ hxm2*hyp2 *hzm2*we
+       dtl(ixm1,iyp2,izm2)   = dtl(ixm1,iyp2,izm2)+ hxm1*hyp2 *hzm2*we
+       dtl(ixp1,iyp2,izm2)   = dtl(ixp1,iyp2,izm2)+ hxp1*hyp2 *hzm2*we
+       dtl(ixp2,iyp2,izm2)   = dtl(ixp2,iyp2,izm2)+ hxp2*hyp2 *hzm2*we
+       dtl(ixm2,iym2,izm1)   = dtl(ixm2,iym2,izm1)+ hxm2*hym2 *hzm1*we
+       dtl(ixm1,iym2,izm1)   = dtl(ixm1,iym2,izm1)+ hxm1*hym2 *hzm1*we
+       dtl(ixp1,iym2,izm1)   = dtl(ixp1,iym2,izm1)+ hxp1*hym2 *hzm1*we
+       dtl(ixp2,iym2,izm1)   = dtl(ixp2,iym2,izm1)+ hxp2*hym2 *hzm1*we
+       dtl(ixm2,iym1,izm1)   = dtl(ixm2,iym1,izm1)+ hxm2*hym1 *hzm1*we
+       dtl(ixm1,iym1,izm1)   = dtl(ixm1,iym1,izm1)+ hxm1*hym1 *hzm1*we
+       dtl(ixp1,iym1,izm1)   = dtl(ixp1,iym1,izm1)+ hxp1*hym1 *hzm1*we
+       dtl(ixp2,iym1,izm1)   = dtl(ixp2,iym1,izm1)+ hxp2*hym1 *hzm1*we
+       dtl(ixm2,iyp1,izm1)   = dtl(ixm2,iyp1,izm1)+ hxm2*hyp1 *hzm1*we
+       dtl(ixm1,iyp1,izm1)   = dtl(ixm1,iyp1,izm1)+ hxm1*hyp1 *hzm1*we
+       dtl(ixp1,iyp1,izm1)   = dtl(ixp1,iyp1,izm1)+ hxp1*hyp1 *hzm1*we
+       dtl(ixp2,iyp1,izm1)   = dtl(ixp2,iyp1,izm1)+ hxp2*hyp1 *hzm1*we
+       dtl(ixm2,iyp2,izm1)   = dtl(ixm2,iyp2,izm1)+ hxm2*hyp2 *hzm1*we
+       dtl(ixm1,iyp2,izm1)   = dtl(ixm1,iyp2,izm1)+ hxm1*hyp2 *hzm1*we
+       dtl(ixp1,iyp2,izm1)   = dtl(ixp1,iyp2,izm1)+ hxp1*hyp2 *hzm1*we
+       dtl(ixp2,iyp2,izm1)   = dtl(ixp2,iyp2,izm1)+ hxp2*hyp2 *hzm1*we
+       dtl(ixm2,iym2,izp1)   = dtl(ixm2,iym2,izp1)+ hxm2*hym2 *hzp1*we
+       dtl(ixm1,iym2,izp1)   = dtl(ixm1,iym2,izp1)+ hxm1*hym2 *hzp1*we
+       dtl(ixp1,iym2,izp1)   = dtl(ixp1,iym2,izp1)+ hxp1*hym2 *hzp1*we
+       dtl(ixp2,iym2,izp1)   = dtl(ixp2,iym2,izp1)+ hxp2*hym2 *hzp1*we
+       dtl(ixm2,iym1,izp1)   = dtl(ixm2,iym1,izp1)+ hxm2*hym1 *hzp1*we
+       dtl(ixm1,iym1,izp1)   = dtl(ixm1,iym1,izp1)+ hxm1*hym1 *hzp1*we
+       dtl(ixp1,iym1,izp1)   = dtl(ixp1,iym1,izp1)+ hxp1*hym1 *hzp1*we
+       dtl(ixp2,iym1,izp1)   = dtl(ixp2,iym1,izp1)+ hxp2*hym1 *hzp1*we
+       dtl(ixm2,iyp1,izp1)   = dtl(ixm2,iyp1,izp1)+ hxm2*hyp1 *hzp1*we
+       dtl(ixm1,iyp1,izp1)   = dtl(ixm1,iyp1,izp1)+ hxm1*hyp1 *hzp1*we
+       dtl(ixp1,iyp1,izp1)   = dtl(ixp1,iyp1,izp1)+ hxp1*hyp1 *hzp1*we
+       dtl(ixp2,iyp1,izp1)   = dtl(ixp2,iyp1,izp1)+ hxp2*hyp1 *hzp1*we
+       dtl(ixm2,iyp2,izp1)   = dtl(ixm2,iyp2,izp1)+ hxm2*hyp2 *hzp1*we
+       dtl(ixm1,iyp2,izp1)   = dtl(ixm1,iyp2,izp1)+ hxm1*hyp2 *hzp1*we
+       dtl(ixp1,iyp2,izp1)   = dtl(ixp1,iyp2,izp1)+ hxp1*hyp2 *hzp1*we
+       dtl(ixp2,iyp2,izp1)   = dtl(ixp2,iyp2,izp1)+ hxp2*hyp2 *hzp1*we
+       dtl(ixm2,iym2,izp2)   = dtl(ixm2,iym2,izp2)+ hxm2*hym2 *hzp2*we
+       dtl(ixm1,iym2,izp2)   = dtl(ixm1,iym2,izp2)+ hxm1*hym2 *hzp2*we
+       dtl(ixp1,iym2,izp2)   = dtl(ixp1,iym2,izp2)+ hxp1*hym2 *hzp2*we
+       dtl(ixp2,iym2,izp2)   = dtl(ixp2,iym2,izp2)+ hxp2*hym2 *hzp2*we
+       dtl(ixm2,iym1,izp2)   = dtl(ixm2,iym1,izp2)+ hxm2*hym1 *hzp2*we
+       dtl(ixm1,iym1,izp2)   = dtl(ixm1,iym1,izp2)+ hxm1*hym1 *hzp2*we
+       dtl(ixp1,iym1,izp2)   = dtl(ixp1,iym1,izp2)+ hxp1*hym1 *hzp2*we
+       dtl(ixp2,iym1,izp2)   = dtl(ixp2,iym1,izp2)+ hxp2*hym1 *hzp2*we
+       dtl(ixm2,iyp1,izp2)   = dtl(ixm2,iyp1,izp2)+ hxm2*hyp1 *hzp2*we
+       dtl(ixm1,iyp1,izp2)   = dtl(ixm1,iyp1,izp2)+ hxm1*hyp1 *hzp2*we
+       dtl(ixp1,iyp1,izp2)   = dtl(ixp1,iyp1,izp2)+ hxp1*hyp1 *hzp2*we
+       dtl(ixp2,iyp1,izp2)   = dtl(ixp2,iyp1,izp2)+ hxp2*hyp1 *hzp2*we
+       dtl(ixm2,iyp2,izp2)   = dtl(ixm2,iyp2,izp2)+ hxm2*hyp2 *hzp2*we
+       dtl(ixm1,iyp2,izp2)   = dtl(ixm1,iyp2,izp2)+ hxm1*hyp2 *hzp2*we
+       dtl(ixp1,iyp2,izp2)   = dtl(ixp1,iyp2,izp2)+ hxp1*hyp2 *hzp2*we
+       dtl(ixp2,iyp2,izp2)   = dtl(ixp2,iyp2,izp2)+ hxp2*hyp2 *hzp2*we
+c
+       dtl(nxm2,nym2,nzm2)   = dtl(nxm2,nym2,nzm2)+ gxm2*gym2 *gzm2*we
+       dtl(nxm1,nym2,nzm2)   = dtl(nxm1,nym2,nzm2)+ gxm1*gym2 *gzm2*we
+       dtl(nxp1,nym2,nzm2)   = dtl(nxp1,nym2,nzm2)+ gxp1*gym2 *gzm2*we
+       dtl(nxp2,nym2,nzm2)   = dtl(nxp2,nym2,nzm2)+ gxp2*gym2 *gzm2*we
+       dtl(nxm2,nym1,nzm2)   = dtl(nxm2,nym1,nzm2)+ gxm2*gym1 *gzm2*we
+       dtl(nxm1,nym1,nzm2)   = dtl(nxm1,nym1,nzm2)+ gxm1*gym1 *gzm2*we
+       dtl(nxp1,nym1,nzm2)   = dtl(nxp1,nym1,nzm2)+ gxp1*gym1 *gzm2*we
+       dtl(nxp2,nym1,nzm2)   = dtl(nxp2,nym1,nzm2)+ gxp2*gym1 *gzm2*we
+       dtl(nxm2,nyp1,nzm2)   = dtl(nxm2,nyp1,nzm2)+ gxm2*gyp1 *gzm2*we
+       dtl(nxm1,nyp1,nzm2)   = dtl(nxm1,nyp1,nzm2)+ gxm1*gyp1 *gzm2*we
+       dtl(nxp1,nyp1,nzm2)   = dtl(nxp1,nyp1,nzm2)+ gxp1*gyp1 *gzm2*we
+       dtl(nxp2,nyp1,nzm2)   = dtl(nxp2,nyp1,nzm2)+ gxp2*gyp1 *gzm2*we
+       dtl(nxm2,nyp2,nzm2)   = dtl(nxm2,nyp2,nzm2)+ gxm2*gyp2 *gzm2*we
+       dtl(nxm1,nyp2,nzm2)   = dtl(nxm1,nyp2,nzm2)+ gxm1*gyp2 *gzm2*we
+       dtl(nxp1,nyp2,nzm2)   = dtl(nxp1,nyp2,nzm2)+ gxp1*gyp2 *gzm2*we
+       dtl(nxp2,nyp2,nzm2)   = dtl(nxp2,nyp2,nzm2)+ gxp2*gyp2 *gzm2*we
+       dtl(nxm2,nym2,nzm1)   = dtl(nxm2,nym2,nzm1)+ gxm2*gym2 *gzm1*we
+       dtl(nxm1,nym2,nzm1)   = dtl(nxm1,nym2,nzm1)+ gxm1*gym2 *gzm1*we
+       dtl(nxp1,nym2,nzm1)   = dtl(nxp1,nym2,nzm1)+ gxp1*gym2 *gzm1*we
+       dtl(nxp2,nym2,nzm1)   = dtl(nxp2,nym2,nzm1)+ gxp2*gym2 *gzm1*we
+       dtl(nxm2,nym1,nzm1)   = dtl(nxm2,nym1,nzm1)+ gxm2*gym1 *gzm1*we
+       dtl(nxm1,nym1,nzm1)   = dtl(nxm1,nym1,nzm1)+ gxm1*gym1 *gzm1*we
+       dtl(nxp1,nym1,nzm1)   = dtl(nxp1,nym1,nzm1)+ gxp1*gym1 *gzm1*we
+       dtl(nxp2,nym1,nzm1)   = dtl(nxp2,nym1,nzm1)+ gxp2*gym1 *gzm1*we
+       dtl(nxm2,nyp1,nzm1)   = dtl(nxm2,nyp1,nzm1)+ gxm2*gyp1 *gzm1*we
+       dtl(nxm1,nyp1,nzm1)   = dtl(nxm1,nyp1,nzm1)+ gxm1*gyp1 *gzm1*we
+       dtl(nxp1,nyp1,nzm1)   = dtl(nxp1,nyp1,nzm1)+ gxp1*gyp1 *gzm1*we
+       dtl(nxp2,nyp1,nzm1)   = dtl(nxp2,nyp1,nzm1)+ gxp2*gyp1 *gzm1*we
+       dtl(nxm2,nyp2,nzm1)   = dtl(nxm2,nyp2,nzm1)+ gxm2*gyp2 *gzm1*we
+       dtl(nxm1,nyp2,nzm1)   = dtl(nxm1,nyp2,nzm1)+ gxm1*gyp2 *gzm1*we
+       dtl(nxp1,nyp2,nzm1)   = dtl(nxp1,nyp2,nzm1)+ gxp1*gyp2 *gzm1*we
+       dtl(nxp2,nyp2,nzm1)   = dtl(nxp2,nyp2,nzm1)+ gxp2*gyp2 *gzm1*we
+       dtl(nxm2,nym2,nzp1)   = dtl(nxm2,nym2,nzp1)+ gxm2*gym2 *gzp1*we
+       dtl(nxm1,nym2,nzp1)   = dtl(nxm1,nym2,nzp1)+ gxm1*gym2 *gzp1*we
+       dtl(nxp1,nym2,nzp1)   = dtl(nxp1,nym2,nzp1)+ gxp1*gym2 *gzp1*we
+       dtl(nxp2,nym2,nzp1)   = dtl(nxp2,nym2,nzp1)+ gxp2*gym2 *gzp1*we
+       dtl(nxm2,nym1,nzp1)   = dtl(nxm2,nym1,nzp1)+ gxm2*gym1 *gzp1*we
+       dtl(nxm1,nym1,nzp1)   = dtl(nxm1,nym1,nzp1)+ gxm1*gym1 *gzp1*we
+       dtl(nxp1,nym1,nzp1)   = dtl(nxp1,nym1,nzp1)+ gxp1*gym1 *gzp1*we
+       dtl(nxp2,nym1,nzp1)   = dtl(nxp2,nym1,nzp1)+ gxp2*gym1 *gzp1*we
+       dtl(nxm2,nyp1,nzp1)   = dtl(nxm2,nyp1,nzp1)+ gxm2*gyp1 *gzp1*we
+       dtl(nxm1,nyp1,nzp1)   = dtl(nxm1,nyp1,nzp1)+ gxm1*gyp1 *gzp1*we
+       dtl(nxp1,nyp1,nzp1)   = dtl(nxp1,nyp1,nzp1)+ gxp1*gyp1 *gzp1*we
+       dtl(nxp2,nyp1,nzp1)   = dtl(nxp2,nyp1,nzp1)+ gxp2*gyp1 *gzp1*we
+       dtl(nxm2,nyp2,nzp1)   = dtl(nxm2,nyp2,nzp1)+ gxm2*gyp2 *gzp1*we
+       dtl(nxm1,nyp2,nzp1)   = dtl(nxm1,nyp2,nzp1)+ gxm1*gyp2 *gzp1*we
+       dtl(nxp1,nyp2,nzp1)   = dtl(nxp1,nyp2,nzp1)+ gxp1*gyp2 *gzp1*we
+       dtl(nxp2,nyp2,nzp1)   = dtl(nxp2,nyp2,nzp1)+ gxp2*gyp2 *gzp1*we
+       dtl(nxm2,nym2,nzp2)   = dtl(nxm2,nym2,nzp2)+ gxm2*gym2 *gzp2*we
+       dtl(nxm1,nym2,nzp2)   = dtl(nxm1,nym2,nzp2)+ gxm1*gym2 *gzp2*we
+       dtl(nxp1,nym2,nzp2)   = dtl(nxp1,nym2,nzp2)+ gxp1*gym2 *gzp2*we
+       dtl(nxp2,nym2,nzp2)   = dtl(nxp2,nym2,nzp2)+ gxp2*gym2 *gzp2*we
+       dtl(nxm2,nym1,nzp2)   = dtl(nxm2,nym1,nzp2)+ gxm2*gym1 *gzp2*we
+       dtl(nxm1,nym1,nzp2)   = dtl(nxm1,nym1,nzp2)+ gxm1*gym1 *gzp2*we
+       dtl(nxp1,nym1,nzp2)   = dtl(nxp1,nym1,nzp2)+ gxp1*gym1 *gzp2*we
+       dtl(nxp2,nym1,nzp2)   = dtl(nxp2,nym1,nzp2)+ gxp2*gym1 *gzp2*we
+       dtl(nxm2,nyp1,nzp2)   = dtl(nxm2,nyp1,nzp2)+ gxm2*gyp1 *gzp2*we
+       dtl(nxm1,nyp1,nzp2)   = dtl(nxm1,nyp1,nzp2)+ gxm1*gyp1 *gzp2*we
+       dtl(nxp1,nyp1,nzp2)   = dtl(nxp1,nyp1,nzp2)+ gxp1*gyp1 *gzp2*we
+       dtl(nxp2,nyp1,nzp2)   = dtl(nxp2,nyp1,nzp2)+ gxp2*gyp1 *gzp2*we
+       dtl(nxm2,nyp2,nzp2)   = dtl(nxm2,nyp2,nzp2)+ gxm2*gyp2 *gzp2*we
+       dtl(nxm1,nyp2,nzp2)   = dtl(nxm1,nyp2,nzp2)+ gxm1*gyp2 *gzp2*we
+       dtl(nxp1,nyp2,nzp2)   = dtl(nxp1,nyp2,nzp2)+ gxp1*gyp2 *gzp2*we
+       dtl(nxp2,nyp2,nzp2)   = dtl(nxp2,nyp2,nzp2)+ gxp2*gyp2 *gzp2*we
+       endif
+2     continue
+c
+!      write(*,*)rca,rcb,P0
+      return
+      end
+c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      REAL function nbar(QQ,iflag) !nbar(z)
+c^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      parameter(Nsel=40)!80)
+      integer iflag
+      real z(Nsel),selfun(Nsel),sec(Nsel),self,az,qq,area_ang
+      common /interpol/z,selfun,sec
+      common/radint/Om0,OL0
+      common /zbounds/zmin,zmax
+      real Om0,OL0
+      external chi
+      az=QQ
+c      if (az.lt.zmin-0.05 .or. az.gt.0.47) then
+      if (az.lt.0.0 .or. az.gt.1.5) then
+         nbar=0.
+      else
+c         call splint(z,selfun,sec,Nsel,az,self)
+c         self=2.4e-5 ! 21.8
+         self=9.44451e-5 ! 21.2 and full?
+         if (iflag.eq.0) then
+c            nbar=self !for clustered mock
+             nbar=9.44451e-5
+         else
+c            nbar=self ! for 10x random mock
+             nbar=9.44451e-5
+         endif
+      endif
+      RETURN
+      END
+c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      REAL function zdis(ar) !interpolation redshift(distance)
+c^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      parameter(Nbin=151)
+      common /interp3/dbin,zbin,sec3
+      real dbin(Nbin),zbin(Nbin),sec3(Nbin)
+      call splint(dbin,zbin,sec3,Nbin,ar,zdis)
+      RETURN
+      END
+c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      REAL function chi(x) !radial distance in Mpc/h as a function of z
+c^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      real*8 qmin,qmax,ans,rdi,epsabs,epsrel,abserr
+      parameter (limit=1000)
+      integer neval,ier,iord(limit),last
+      real*8 alist(limit),blist(limit),elist(limit),rlist(limit)
+      external rdi,dqage
+      common/radint/Om0,OL0
+      qmin=0.d0
+      qmax=dble(x)
+      epsabs=0.d0
+      epsrel=1.d-2                                                            
+      call dqage(rdi,qmin,qmax,epsabs,epsrel,30,limit,ans,abserr,
+     $ neval,ier,alist,blist,rlist,elist,iord,last)
+      chi=real(ans)
+      RETURN
+      END
+c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      real*8 function rdi(z) !radial distance integrand
+c^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      real Om0,OL0
+      parameter (Om0=0.27,OL0=0.73)  
+      real*8 z
+      rdi=3000.d0/dsqrt(OL0+(1.d0-Om0-OL0)*(1.d0+z)**2+Om0*(1.d0+z)**3)
+      return
+      end
+cc*******************************************************************
+      subroutine fcomb(L,dcl,N)
+cc*******************************************************************
+      implicit none
+      integer L,Lnyq,ix,iy,iz,icx,icy,icz,N
+      real cf,rkx,rky,rkz,wkx,wky,wkz,cfac
+      complex dcl(L,L,L)
+      real*8 tpi,tpiL,piL
+      complex*16 rec,xrec,yrec,zrec
+      complex c1,ci,c000,c001,c010,c011,cma,cmb,cmc,cmd
+      tpi=6.283185307d0
+c
+      cf=1./(6.**3*4.) !*float(N)) not needed for FKP
+      Lnyq=L/2+1
+      tpiL=tpi/float(L)
+      piL=-tpiL/2.
+      rec=cmplx(dcos(piL),dsin(piL))
+      c1=cmplx(1.,0.)
+      ci=cmplx(0.,1.)
+      zrec=c1
+      do 301 iz=1,Lnyq
+       icz=mod(L-iz+1,L)+1
+       rkz=tpiL*(iz-1)
+       Wkz=1.
+       if(rkz.ne.0.)Wkz=(sin(rkz/2.)/(rkz/2.))**4
+       yrec=c1
+       do 302 iy=1,Lnyq
+        icy=mod(L-iy+1,L)+1
+        rky=tpiL*(iy-1)
+        Wky=1.
+        if(rky.ne.0.)Wky=(sin(rky/2.)/(rky/2.))**4
+        xrec=c1
+        do 303 ix=1,Lnyq
+         icx=mod(L-ix+1,L)+1
+         rkx=tpiL*(ix-1)
+         Wkx=1.
+         if(rkx.ne.0.)Wkx=(sin(rkx/2.)/(rkx/2.))**4
+         cfac=cf/(Wkx*Wky*Wkz)
+c
+         cma=ci*xrec*yrec*zrec
+         cmb=ci*xrec*yrec*conjg(zrec)
+         cmc=ci*xrec*conjg(yrec)*zrec
+         cmd=ci*xrec*conjg(yrec*zrec)
+c
+         c000=dcl(ix,iy ,iz )*(c1-cma)+conjg(dcl(icx,icy,icz))*(c1+cma)
+         c001=dcl(ix,iy ,icz)*(c1-cmb)+conjg(dcl(icx,icy,iz ))*(c1+cmb)
+         c010=dcl(ix,icy,iz )*(c1-cmc)+conjg(dcl(icx,iy ,icz))*(c1+cmc)
+         c011=dcl(ix,icy,icz)*(c1-cmd)+conjg(dcl(icx,iy ,iz ))*(c1+cmd)
+c
+c
+         dcl(ix,iy ,iz )=c000*cfac
+         dcl(ix,iy ,icz)=c001*cfac
+         dcl(ix,icy,iz )=c010*cfac
+         dcl(ix,icy,icz)=c011*cfac
+         dcl(icx,iy ,iz )=conjg(dcl(ix,icy,icz))
+         dcl(icx,iy ,icz)=conjg(dcl(ix,icy,iz ))
+         dcl(icx,icy,iz )=conjg(dcl(ix,iy ,icz))
+         dcl(icx,icy,icz)=conjg(dcl(ix,iy ,iz ))
+c
+         xrec=xrec*rec
+303     continue
+        yrec=yrec*rec
+302    continue
+       zrec=zrec*rec
+301   continue
+c
+      return
+      end
+c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      include '/home/users/hahn/powercode/dqage.f'
+      include '/home/users/hahn/powercode/d1mach.f'
+      include '/home/users/hahn/powercode/dqawfe.f'
+      include '/home/users/hahn/powercode/spline.f'
+      include '/home/users/hahn/powercode/splint.f'
+      include '/home/users/hahn/powercode/gabqx.f'

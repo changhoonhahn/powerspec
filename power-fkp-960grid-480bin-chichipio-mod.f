@@ -1,5 +1,6 @@
       implicit none 
-      integer Ngrid,ix,iy,iz,Nbins,nyq,iky,ikz,imk,i,Ibin,Ng,Nr
+      integer Ngrid,ix,iy,iz,Nbins,nyq,iky,ikz,imk,i,Ibin,Ng,Nr,ikx
+      integer icx,icy,icz
       parameter(Ngrid=960,Nbins=480)
       complex, allocatable :: dcg(:,:,:),dcr(:,:,:)
 c      complex dcg(Ngrid/2+1,Ngrid,Ngrid),dcr(Ngrid/2+1,Ngrid,Ngrid)
@@ -64,10 +65,14 @@ c      complex dcg(Ngrid/2+1,Ngrid,Ngrid),dcr(Ngrid/2+1,Ngrid,Ngrid)
       enddo
       do 100 iz=1,Ngrid
          ikz=mod(iz+Ngrid/2-2,Ngrid)-Ngrid/2+1
+         icz=mod(Ngrid+1-iz,Ngrid)+1
          do 100 iy=1,Ngrid
             iky=mod(iy+Ngrid/2-2,Ngrid)-Ngrid/2+1
-            do 100 ix=1,Ngrid/2+1
-               rk=sqrt(real((ix-1)**2+iky**2+ikz**2))
+            icy=mod(Ngrid+1-iy,Ngrid)+1
+            do 100 ix=1,Ngrid
+               ikx=mod(ix+Ngrid/2-2,Ngrid)-Ngrid/2+1
+               icx=mod(Ngrid+1-ix,Ngrid)+1
+               rk=sqrt(real(ikx**2+iky**2+ikz**2))
                imk=nint(Nbins*rk/nyq)
                if(imk.le.Nbins .and. imk.ne.0)then
                   cot1=real(ikz)/rk
@@ -76,12 +81,20 @@ c      complex dcg(Ngrid/2+1,Ngrid,Ngrid),dcr(Ngrid/2+1,Ngrid,Ngrid)
                   Le4=3.75e-1-3.75e0*coga**2+4.375e0*coga**4
                   co(imk)=co(imk)+1.
                   avgk(imk)=avgk(imk)+rk                  
-                  ct=dcg(ix,iy,iz)
+                  if (ix.le.Ngrid/2+1) then 
+                     ct=dcg(ix,iy,iz)
+                  else !use cc
+                     ct=dcg(icx,icy,icz)
+                  endif
                   pk=(cabs(ct))**2
                   avgPg(imk)=avgPg(imk)+pk
                   avgPg2(imk)=avgPg2(imk)+pk*5.*Le2
                   avgPg4(imk)=avgPg4(imk)+pk*9.*Le4                  
-                  ct=alpha*dcr(ix,iy,iz)
+                  if (ix.le.Ngrid/2+1) then 
+                     ct=alpha*dcr(ix,iy,iz)
+                  else !use cc
+                     ct=alpha*dcr(icx,icy,icz)
+                  endif
                   pk=(cabs(ct))**2
                   avgPr(imk)=avgPr(imk)+pk
                   avgPr2(imk)=avgPr2(imk)+pk*5.*Le2

@@ -1,5 +1,6 @@
       implicit none 
-      integer Ngrid,ix,iy,iz,Nbins,nyq,iky,ikz,imk,i,Ibin,Ng,Nr
+      integer Ngrid,ix,iy,iz,Nbins,nyq,iky,ikz,imk,i,Ibin,Ng,Nr,ikx
+      integer icx,icy,icz
       parameter(Ngrid=960,Nbins=480)
       complex, allocatable :: dcg(:,:,:),dcr(:,:,:)
 c      complex dcg(Ngrid/2+1,Ngrid,Ngrid),dcr(Ngrid/2+1,Ngrid,Ngrid)
@@ -8,7 +9,7 @@ c      complex dcg(Ngrid/2+1,Ngrid,Ngrid),dcr(Ngrid/2+1,Ngrid,Ngrid)
       character filecoef*200,filecoefr*200,filepower*200
       character randfft*200,lssfft*200,powername*200
       real akfun,I10,I12,I22,I13,I23,I33,P0,alpha,P0m
-      real cot1,coga,Le2,Le4,pk
+      real cot1,coga,Le2,Le4,pk,wsys
       complex ct
       
       write(*,*) 'Random Fourier file :'
@@ -26,7 +27,7 @@ c      complex dcg(Ngrid/2+1,Ngrid,Ngrid),dcr(Ngrid/2+1,Ngrid,Ngrid)
 
       open(unit=4,file=lssfft,status='old',form='unformatted')
       read(4)dcg
-      read(4)P0m,Ng 
+      read(4)P0m,Ng,wsys 
       close(4)
       open(unit=4,file=randfft,status='old',form='unformatted')
       read(4)dcr
@@ -37,7 +38,8 @@ c      complex dcg(Ngrid/2+1,Ngrid,Ngrid),dcr(Ngrid/2+1,Ngrid,Ngrid)
          write(*,*)'P0s do not match'
          stop
       endif
-      alpha=float(Ng)/float(Nr) !now scale random integrals by alpha
+      alpha=wsys/float(Nr) !now scale random integrals by alpha
+!      alpha=float(Ng)/float(Nr)
       I10=I10*alpha
       I12=I12*alpha
       I22=I22*alpha
@@ -64,10 +66,14 @@ c      complex dcg(Ngrid/2+1,Ngrid,Ngrid),dcr(Ngrid/2+1,Ngrid,Ngrid)
       enddo
       do 100 iz=1,Ngrid
          ikz=mod(iz+Ngrid/2-2,Ngrid)-Ngrid/2+1
+         icz=mod(Ngrid+1-iz,Ngrid)+1
          do 100 iy=1,Ngrid
             iky=mod(iy+Ngrid/2-2,Ngrid)-Ngrid/2+1
-            do 100 ix=1,Ngrid/2+1
-               rk=sqrt(real((ix-1)**2+iky**2+ikz**2))
+            icy=mod(Ngrid+1-iy,Ngrid)+1
+            do 100 ix=1,Ngrid
+               ikx=mod(ix+Ngrid/2-2,Ngrid)-Ngrid/2+1
+               icx=mod(Ngrid+1-ix,Ngrid)+1
+               rk=sqrt(real(ikx**2+iky**2+ikz**2))
                imk=nint(Nbins*rk/nyq)
                if(imk.le.Nbins .and. imk.ne.0)then
                   cot1=real(ikz)/rk
@@ -76,12 +82,20 @@ c      complex dcg(Ngrid/2+1,Ngrid,Ngrid),dcr(Ngrid/2+1,Ngrid,Ngrid)
                   Le4=3.75e-1-3.75e0*coga**2+4.375e0*coga**4
                   co(imk)=co(imk)+1.
                   avgk(imk)=avgk(imk)+rk                  
-                  ct=dcg(ix,iy,iz)
+                  if (ix.le.Ngrid/2+1) then 
+                     ct=dcg(ix,iy,iz)
+                  else !use cc
+                     ct=dcg(icx,icy,icz)
+                  endif
                   pk=(cabs(ct))**2
                   avgPg(imk)=avgPg(imk)+pk
                   avgPg2(imk)=avgPg2(imk)+pk*5.*Le2
                   avgPg4(imk)=avgPg4(imk)+pk*9.*Le4                  
-                  ct=alpha*dcr(ix,iy,iz)
+                  if (ix.le.Ngrid/2+1) then 
+                     ct=alpha*dcr(ix,iy,iz)
+                  else !use cc
+                     ct=alpha*dcr(icx,icy,icz)
+                  endif
                   pk=(cabs(ct))**2
                   avgPr(imk)=avgPr(imk)+pk
                   avgPr2(imk)=avgPr2(imk)+pk*5.*Le2

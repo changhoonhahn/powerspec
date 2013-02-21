@@ -3,7 +3,7 @@
       integer Ng,Nr,iflag,ic,Nbin, l
       integer*8 planf
       real pi,cspeed
-      parameter(Nsel=201,Nmax=2*10**8,Ngrid=960,Nbin=151)
+      parameter(Nsel=201,Nmax=2*10**8,Ngrid=10,Nbin=151)
       parameter(pi=3.141592654)
       integer grid
       dimension grid(3)
@@ -21,6 +21,7 @@
 c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
       character selfunfile*200,lssfile*200,randomfile*200,filecoef*200
       character spltest*200,fname*200,outname*200
+      CHARACTER dcgfile*200,dcgfname*200,dcrfile*200,dcrfname*200
       common /interpol/z,selfun,sec
       common /interpol2/ra,sec2
       common /interp3/dbin,zbin,sec3
@@ -94,10 +95,25 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
          allocate(dcg(Ngrid,Ngrid,Ngrid))
          call assign(Ngal,rg,rm,Lm,dcg,P0,nbg,ig,wg)
          write(*,*) 'assign done!'
+         write(*,*) 'DCG Output file:'
+         read(*,'(a)') dcgfile
+         dcgfname='/mount/chichipio2/hahn/FFT/'//dcgfile
+         OPEN(unit=4,file=dcgfname,status='unknown',form='formatted')
+         DO iz=1,Ngrid
+            DO iy=1,Ngrid
+                DO ix=1,Ngrid
+                    WRITE(*,*) ix,iy,iz,dcg(ix,iy,iz)
+                ENDDO
+            ENDDO
+         ENDDO
+         CLOSE(4)
+ 1015    FORMAT(3(2x,I3),2x,E16.6)
          call fftwnd_f77_one(planf,dcg,dcg)      
          write(*,*) 'FFT done!'
          call fcomb(Lm,dcg,Ng)
          write(*,*) 'recombination done!'
+         
+
 
          write(*,*) 'Fourier file :'
          read(*,'(a)') filecoef
@@ -157,6 +173,21 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
          allocate(dcr(Ngrid,Ngrid,Ngrid))
          call assign(Nran,rr,rm,Lm,dcr,P0,nbr,ir,wr)
          write(*,*) 'assign done!'
+
+         write(*,*) 'DCG Output file:'
+         read(*,'(a)') dcrfile
+         dcrfname='/mount/chichipio2/hahn/FFT/'//dcrfile
+         OPEN(unit=4,file=dcrfname,status='unknown',form='formatted')
+         DO iz=1,Ngrid
+            DO iy=1,Ngrid
+                DO ix=1,Ngrid
+                    WRITE(4,1035) ix,iy,iz,dcr(ix,iy,iz)
+                ENDDO
+            ENDDO
+         ENDDO
+         CLOSE(4)
+ 1035    FORMAT(2x,I16,2x,I16,2x,I16,E16.6)
+     
          call fftwnd_f77_one(planf,dcr,dcr)      
          write(*,*) 'FFT done!'
          call fcomb(Lm,dcr,Nr)

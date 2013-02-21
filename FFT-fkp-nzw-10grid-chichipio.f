@@ -1,9 +1,9 @@
       implicit none  !as FFT_FKP_SDSS_LRG_new but removes some hard-cored choices
       integer Nsel,Nran,i,iwr,Ngal,Nmax,n,kx,ky,kz,Lm,Ngrid,ix,iy,iz,j,k
-      integer Ng,Nr,iflag,ic,Nbin, l
+      integer Ng,Nr,iflag,ic,Nbin,l,outside
       integer*8 planf
       real pi,cspeed
-      parameter(Nsel=201,Nmax=2*10**8,Ngrid=960,Nbin=151)
+      parameter(Nsel=201,Nmax=2*10**8,Ngrid=10,Nbin=151)
       parameter(pi=3.141592654)
       integer grid
       dimension grid(3)
@@ -13,7 +13,7 @@
       real cz,Om0,OL0,sec2(Nsel),chi,nbar,Rbox
       real, allocatable :: nbg(:),nbr(:),rg(:,:),rr(:,:),wg(:),wr(:)
       real selfun(Nsel),z(Nsel),sec(Nsel),zmin,zmax,az,ra,dec,rad,numden
-      real w, nbb
+      real w, nbb, wsys
       real alpha,P0,nb,weight,ar,akf,Fr,Fi,Gr,Gi
       real*8 I10,I12,I22,I13,I23,I33
       real kdotr,vol,xscale,rlow,rm(2)
@@ -21,6 +21,8 @@
 c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
       character selfunfile*200,lssfile*200,randomfile*200,filecoef*200
       character spltest*200,fname*200,outname*200
+      CHARACTER dcgfile*200,dcgfname*200,dcrfile*200,dcrfname*200
+      CHARACTER xyzfname*200
       common /interpol/z,selfun,sec
       common /interpol2/ra,sec2
       common /interp3/dbin,zbin,sec3
@@ -68,7 +70,7 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
          allocate(rg(3,Nmax),nbg(Nmax),ig(Nmax),wg(Nmax))
          open(unit=4,file=fname,status='old',form='formatted')
          Ngal=0 !Ngal will get determined later after survey is put into a box (Ng)
-        
+         wsys=0.0
          do i=1,Nmax
             read(4,*,end=13)ra,dec,az,w,nbb
             ra=ra*(pi/180.)
@@ -80,11 +82,26 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
             rg(2,i)=rad*cos(dec)*sin(ra)
             rg(3,i)=rad*sin(dec)
             nbg(i)=nbb
+            wsys=wsys+w*(1.0+nbb*P0)
             Ngal=Ngal+1
          enddo
  13      continue
 !         close(7)
          close(4)
+
+         WRITE(*,*) 'Ngal=',Ngal
+         WRITE(*,*) 'min x',MINVAL(rg(1,:)),'max x',MAXVAL(rg(1,:))
+         WRITE(*,*) 'min y',MINVAL(rg(2,:)),'max y',MAXVAL(rg(2,:))
+         WRITE(*,*) 'min z',MINVAL(rg(3,:)),'max z',MAXVAL(rg(3,:))
+         WRITE(*,*) 'Ngalsys',wsys,'avg w:',wsys/float(Ngal)
+
+         xyzfname='/mount/chichipio2/hahn/data/cmass-dr10v5-N-xyz.dat'
+         OPEN(UNIT=4,FILE=xyzfname,STATUS='UNKNOWN',FORM='FORMATTED')
+         DO i=1,Ngal
+            WRITE(4,1005) rg(1,i),rg(2,i),rg(3,i)
+         ENDDO
+         CLOSE(4)
+ 1005    FORMAT(3(2x,E16.6))
 
          call PutIntoBox(Ngal,rg,Rbox,ig,Ng,Nmax)
          gfrac=100. *float(Ng)/float(Ngal)
@@ -94,17 +111,31 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
          allocate(dcg(Ngrid,Ngrid,Ngrid))
          call assign(Ngal,rg,rm,Lm,dcg,P0,nbg,ig,wg)
          write(*,*) 'assign done!'
+         write(*,*) 'DCG Output file:'
+         read(*,'(a)') dcgfile
+         dcgfname='/mount/chichipio2/hahn/FFT/'//dcgfile
+         OPEN(unit=4,file=dcgfname,status='unknown',form='formatted')
+         DO iz=1,Ngrid
+            DO iy=1,Ngrid
+                DO ix=1,Ngrid
+                    WRITE(4,1015) ix,iy,iz,real(dcg(ix,iy,iz))
+     &              ,aimag(dcg(ix,iy,iz))
+                ENDDO
+            ENDDO
+         ENDDO
+         CLOSE(4)
+ 1015    FORMAT(3(2x,I3),2x,E16.6,2x,E16.6)
+
          call fftwnd_f77_one(planf,dcg,dcg)      
          write(*,*) 'FFT done!'
          call fcomb(Lm,dcg,Ng)
          write(*,*) 'recombination done!'
-
          write(*,*) 'Fourier file :'
          read(*,'(a)') filecoef
          outname='/mount/chichipio2/hahn/FFT/'//filecoef
          open(unit=4,file=outname,status='unknown',form='unformatted')
          write(4)(((dcg(ix,iy,iz),ix=1,Lm/2+1),iy=1,Lm),iz=1,Lm)
-         write(4)P0,Ng         
+         write(4)P0,Ng,wsys
          close(4)
 
        elseif (iflag.eq.1) then ! compute discretness integrals and FFT random mock
@@ -114,6 +145,8 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
          allocate(rr(3,Nmax),nbr(Nmax),ir(Nmax),wr(Nmax))
          open(unit=4,file=fname,status='old',form='formatted')
          Nran=0 !Ngal will get determined later after survey is put into a box (Nr)
+         wsys=0.0
+         outside=0
          do i=1,Nmax
             read(4,*,end=15)ra,dec,az,w,nbb
             ra=ra*(pi/180.)
@@ -124,11 +157,31 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
             rr(3,i)=rad*sin(dec)
             nbr(i)=nbb
             wr(i) =w
+            wsys=wsys+w
             Nran=Nran+1
+            IF (rr(1,i).gt.0.0 .or. rr(1,i).lt.-2345.244 .or. 
+     &      rr(2,i).gt.1872.209 .or. rr(2,i).lt.-2072.302 .or. 
+     &      rr(3,i).gt.1968.855 .or. rr(3,i).lt.-119.64) THEN
+                outside=outside+1
+            ENDIF
          enddo
  15      continue
          close(4)
-      
+       
+         WRITE(*,*) 'min x',MINVAL(rr(1,:)),'max x',MAXVAL(rr(1,:))
+         WRITE(*,*) 'min y',MINVAL(rr(2,:)),'max y',MAXVAL(rr(2,:))
+         WRITE(*,*) 'min z',MINVAL(rr(3,:)),'max z',MAXVAL(rr(3,:))
+         WRITE(*,*) 'outside',outside
+         WRITE(*,*) 'outside frac',float(outside)/float(Ngal)
+         xyzfname=
+     &   '/mount/chichipio2/hahn/data/cmass-dr10v5-N-xyz.ran.dat'
+         OPEN(UNIT=4,FILE=xyzfname,STATUS='UNKNOWN',FORM='FORMATTED')
+         DO i=1,Ngal
+            WRITE(4,1010)rr(1,i),rr(2,i),rr(3,i)
+         ENDDO
+         CLOSE(4)
+ 1010    FORMAT(3(2x,E16.6))
+
          call PutIntoBox(Nran,rr,Rbox,ir,Nr,Nmax)
          gfrac=100. *float(Nr)/float(Nran)
          write(*,*)'Number of Random in Box=',Nr,gfrac,'percent'
@@ -157,6 +210,22 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
          allocate(dcr(Ngrid,Ngrid,Ngrid))
          call assign(Nran,rr,rm,Lm,dcr,P0,nbr,ir,wr)
          write(*,*) 'assign done!'
+
+         write(*,*) 'DCR Output file:'
+         read(*,'(a)') dcrfile
+         dcrfname='/mount/chichipio2/hahn/FFT/'//dcrfile
+         OPEN(unit=4,file=dcrfname,status='unknown',form='formatted')
+         DO iz=1,Ngrid
+            DO iy=1,Ngrid
+                DO ix=1,Ngrid
+                    WRITE(4,1035) ix,iy,iz,real(dcr(ix,iy,iz))
+     &              ,aimag(dcr(ix,iy,iz))
+                ENDDO
+            ENDDO
+         ENDDO
+         CLOSE(4)
+ 1035    FORMAT(3(2x,I16),2x,E16.6,2x,E16.6)
+     
          call fftwnd_f77_one(planf,dcr,dcr)      
          write(*,*) 'FFT done!'
          call fcomb(Lm,dcr,Nr)

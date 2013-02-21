@@ -1,9 +1,9 @@
       implicit none  !as FFT_FKP_SDSS_LRG_new but removes some hard-cored choices
       integer Nsel,Nran,i,iwr,Ngal,Nmax,n,kx,ky,kz,Lm,Ngrid,ix,iy,iz,j,k
       integer Ng,Nr,iflag,ic,Nbin, l
-      integer*8 planf
+      integer*8 planf,plan_real
       real pi,cspeed
-      parameter(Nsel=201,Nmax=2*10**8,Ngrid=960,Nbin=151)
+      parameter(Nsel=201,Nmax=2*10**8,Ngrid=1200,Nbin=151)
       parameter(pi=3.141592654)
       integer grid
       dimension grid(3)
@@ -31,8 +31,10 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
       grid(1) = Ngrid
       grid(2) = Ngrid
       grid(3) = Ngrid
-      call fftwnd_f77_create_plan(planf,3,grid,FFTW_BACKWARD,
-     $     FFTW_ESTIMATE + FFTW_IN_PLACE)
+c      call fftwnd_f77_create_plan(planf,3,grid,FFTW_BACKWARD,
+c     $     FFTW_ESTIMATE + FFTW_IN_PLACE)
+      call rfftw3d_f77_create_plan(plan_real,Ngrid,Ngrid,Ngrid,
+     & FFTW_REAL_TO_COMPLEX,FFTW_ESTIMATE + FFTW_IN_PLACE)
 
       write(*,*)'cosmological parameters: Om0, OL0'
       read(*,*)Om0,OL0
@@ -49,6 +51,7 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
 
       Lm=Ngrid
       xscale=2.*RBox
+      
       rlow=-Rbox
          rm(1)=float(Lm)/xscale
          rm(2)=1.-rlow*rm(1)
@@ -91,12 +94,17 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
          write(*,*)'Number of Galaxies in Box=',Ng,gfrac,'percent'
        
 
-         allocate(dcg(Ngrid,Ngrid,Ngrid))
-         call assign(Ngal,rg,rm,Lm,dcg,P0,nbg,ig,wg)
+c         allocate(dcg(Ngrid,Ngrid,Ngrid))
+c         call assign(Ngal,rg,rm,Lm,dcg,P0,nbg,ig,wg)
+         allocate(dcg(Ngrid/2+1,Ngrid,Ngrid))
+         call assign_CIC(Ngal,rg,rm,Lm,dcg,wg)
          write(*,*) 'assign done!'
-         call fftwnd_f77_one(planf,dcg,dcg)      
+         write(*,*)'doing fft'
+         call rfftwnd_f77_one_real_to_complex(plan_real,dcg,dcg)
+c         call fftwnd_f77_one(planf,dcg,dcg)      
          write(*,*) 'FFT done!'
-         call fcomb(Lm,dcg,Ng)
+         call correct(Lm,Lm,Lm,dcg) !correct density for interpolation
+c         call fcomb(Lm,dcg,Ng)
          write(*,*) 'recombination done!'
 
          write(*,*) 'Fourier file :'
@@ -154,12 +162,16 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
          write(*,*)'I10=',I10,'I12=',I12,'I22=',I22
          write(*,*)'I13=',I13,'I23=',I23,'I33=',I33
 
-         allocate(dcr(Ngrid,Ngrid,Ngrid))
-         call assign(Nran,rr,rm,Lm,dcr,P0,nbr,ir,wr)
+c         allocate(dcr(Ngrid,Ngrid,Ngrid))
+         allocate(dcr(Ngrid/2+1,Ngrid,Ngrid))
+c         call assign(Nran,rr,rm,Lm,dcr,P0,nbr,ir,wr)
+         call assign_CIC(Nran,rr,rm,Lm,dcr,wr)
          write(*,*) 'assign done!'
-         call fftwnd_f77_one(planf,dcr,dcr)      
+c         call fftwnd_f77_one(planf,dcr,dcr)      
+         call rfftwnd_f77_one_real_to_complex(plan_real,dcr,dcr)
          write(*,*) 'FFT done!'
-         call fcomb(Lm,dcr,Nr)
+c         call fcomb(Lm,dcr,Nr)
+         call correct(Lm,Lm,Lm,dcr) !correct density for interpolation
          write(*,*) 'recombination done!'
 
          write(*,*) 'Fourier file :'
@@ -177,6 +189,81 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
 
  1025 format(2x,6e14.6)
  123  stop
+      end
+cc*******************************************************************
+      subroutine assign_CIC(Npar,r,rm,Lm,dtl,wg)
+cc*******************************************************************
+      integer Lm,ixp,iyp,izp,ixa,iya,iza
+      real r(3,Npar),rm(2),wg(Npar)
+      real dtl(Lx+2,Ly,Lz)
+      real dx,dy,dz,rx,ry,rz
+c
+      do i=1,Npar
+         rx=rm(1)*r(1,i)+rm(2)
+         ry=rm(1)*r(2,i)+rm(2)
+         rz=rm(1)*r(3,i)+rm(2)
+         ixp=int(rx)
+         iyp=int(ry)
+         izp=int(rz)
+         dx=rx-real(ixp)
+         dy=ry-real(iyp)
+         dz=rz-real(izp)
+         ixa=mod(ixp,Lx)+1
+         iya=mod(iyp,Ly)+1
+         iza=mod(izp,Lz)+1
+
+         dtl(ixa,iya,iza) = dtl(ixa,iya,iza)+dx*dy*dz *wg(i)
+         dtl(ixa,iya,izp) = dtl(ixa,iya,izp)+dx*dy*(1.-dz) *wg(i)
+
+         dtl(ixp,iya,iza) = dtl(ixp,iya,iza)+(1.-dx)*dy*dz *wg(i)
+         dtl(ixp,iya,izp) = dtl(ixp,iya,izp)+(1.-dx)*dy*(1.-dz) *wg(i)
+
+         dtl(ixa,iyp,iza) = dtl(ixa,iyp,iza)+dx*(1.-dy)*dz *wg(i)
+         dtl(ixa,iyp,izp) = dtl(ixa,iyp,izp)+dx*(1.-dy)*(1.-dz) *wg(i)
+
+         dtl(ixp,iyp,iza) = dtl(ixp,iyp,iza)+(1.-dx)*(1.-dy)*dz *wg(i)
+         dtl(ixp,iyp,izp) = dtl(ixp,iyp,izp)+(1.-dx)*(1.-dy)*(1.-dz)
+     $    *wg(i)
+      enddo
+
+      return
+      end
+cc*******************************************************************
+      subroutine correct(Lx,Ly,Lz,dtl)
+cc*******************************************************************
+      complex dtl(Lx/2+1,Ly,Lz)
+      real rkz,rky,rkx,tpiLx,tpiLy,tpiLz,Wkz,Wky,Wkx,cf,cfac
+      integer icz,icy,icx,iflag
+      iflag=2
+
+      tpi=6.283185307
+      cf=1.
+      tpiLx=tpi/float(Lx)
+      tpiLy=tpi/float(Ly)
+      tpiLz=tpi/float(Lz)
+      do 300 iz=1,Lz/2+1
+         icz=mod(Lz-iz+1,Lz)+1
+         rkz=tpiLz*float(iz-1)
+         Wkz=1.
+         if(rkz.ne.0.)Wkz=(sin(rkz/2.)/(rkz/2.))**iflag
+         do 300 iy=1,Ly/2+1
+            icy=mod(Ly-iy+1,Ly)+1
+            rky=tpiLy*float(iy-1)
+            Wky=1.
+            if(rky.ne.0.)Wky=(sin(rky/2.)/(rky/2.))**iflag
+            do 300 ix=1,Lx/2+1
+               rkx=tpiLx*float(ix-1)
+               Wkx=1.
+               if(rkx.ne.0.)Wkx=(sin(rkx/2.)/(rkx/2.))**iflag
+               cfac=cf/(Wkx*Wky*Wkz)
+               dtl(ix,iy,iz)=dtl(ix,iy,iz)*cfac
+               if(iz.ne.icz) dtl(ix,iy,icz)=dtl(ix,iy,icz)*cfac
+               if(iy.ne.icy) dtl(ix,icy,iz)=dtl(ix,icy,iz)*cfac
+               if(iz.ne.icz .and. iy.ne.icy) then
+                  dtl(ix,icy,icz)=dtl(ix,icy,icz)*cfac
+               endif
+ 300              continue
+      return
       end
 c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
       Subroutine PutIntoBox(Ng,rg,Rbox,ig,Ng2,Nmax)

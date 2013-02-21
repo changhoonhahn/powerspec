@@ -13,7 +13,7 @@
       real cz,Om0,OL0,sec2(Nsel),chi,nbar,Rbox
       real, allocatable :: nbg(:),nbr(:),rg(:,:),rr(:,:),wg(:),wr(:)
       real selfun(Nsel),z(Nsel),sec(Nsel),zmin,zmax,az,ra,dec,rad,numden
-      real w, nbb
+      real w,nbb,wsys
       real alpha,P0,nb,weight,ar,akf,Fr,Fi,Gr,Gi
       real*8 I10,I12,I22,I13,I23,I33
       real kdotr,vol,xscale,rlow,rm(2)
@@ -50,8 +50,8 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
       Lm=Ngrid
       xscale=2.*RBox
       rlow=-Rbox
-         rm(1)=float(Lm)/xscale
-         rm(2)=1.-rlow*rm(1)
+      rm(1)=float(Lm)/xscale
+      rm(2)=1.-rlow*rm(1)
       
       write(*,*)'mock (0) or random mock(1)?'
       read(*,*)iflag
@@ -68,7 +68,7 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
          allocate(rg(3,Nmax),nbg(Nmax),ig(Nmax),wg(Nmax))
          open(unit=4,file=fname,status='old',form='formatted')
          Ngal=0 !Ngal will get determined later after survey is put into a box (Ng)
-        
+         wsys=0.0
          do i=1,Nmax
             read(4,*,end=13)ra,dec,az,w,nbb
             ra=ra*(pi/180.)
@@ -81,9 +81,9 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
             rg(3,i)=rad*sin(dec)
             nbg(i)=nbb
             Ngal=Ngal+1
+            wsys=wsys+w*(1.0+nbb*P0)
          enddo
  13      continue
-!         close(7)
          close(4)
 
          call PutIntoBox(Ngal,rg,Rbox,ig,Ng,Nmax)
@@ -104,7 +104,7 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
          outname='/mount/chichipio2/hahn/FFT/'//filecoef
          open(unit=4,file=outname,status='unknown',form='unformatted')
          write(4)(((dcg(ix,iy,iz),ix=1,Lm/2+1),iy=1,Lm),iz=1,Lm)
-         write(4)P0,Ng         
+         write(4)P0,Ng,wsys
          close(4)
 
        elseif (iflag.eq.1) then ! compute discretness integrals and FFT random mock
