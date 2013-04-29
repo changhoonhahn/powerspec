@@ -4,18 +4,18 @@ name0="cmass_dr10_south_ir4"
 nameend=".v5.2.wghtv.txt"
 randname="cmass_dr10_south_randoms_ir4_combined_wboss.v5.2.wghtv.txt"
 nbarfname="nbar-dr10v5-S-Anderson.dat"
-sscale=4800.0
-Rbox=2400.0
-box="4800"
+sscale=4000.0
+Rbox=2000.0
+box="4000"
 FFT="FFT"
 power="power_"
-grid="240"
+grid="480"
 
 ifort -O3 -o FFT-fkp-mock-wboss-v5p2-south.exe FFT-fkp-mock-wboss-v5p2-south.f -L/usr/local/fftw_intel_s/lib -lsfftw -lsfftw
 
 for P0 in 20000
 do
-    for i in {1..611}
+    for i in {1..1}
     do
         echo $i
         if [ $i -lt 10 ]
@@ -53,7 +53,7 @@ ifort -O3 -o power-fkp-mock-wboss-v5p2-south.exe power-fkp-mock-wboss-v5p2-south
 
 for P0 in 20000
 do
-    for i in {1..611}
+    for i in {1..1}
     do
         echo $i
         echo $P0
