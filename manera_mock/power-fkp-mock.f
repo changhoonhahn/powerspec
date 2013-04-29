@@ -7,30 +7,23 @@ c      complex dcg(Ngrid/2+1,Ngrid,Ngrid),dcr(Ngrid/2+1,Ngrid,Ngrid)
       real avgPg2(Nbins),avgPr2(Nbins),avgPg4(Nbins),avgPr4(Nbins)
       character filecoef*200,filecoefr*200,filepower*200
       character lssfname*200,randfname*200,powerfname*200,sscale*200
-      real akfun,I10,I12,I22,I13,I23,I33,P0,alpha,P0m
+      real akfun,I10,I12,I22,I13,I23,I33,P0,alpha,P0m,wsys
       real cot1,coga,Le2,Le4,pk
       complex ct
       
-c      write(*,*) 'Random Fourier file :'
       call getarg(1,lssfname)
       filecoefr='/mount/chichipio2/hahn/FFT/manera_mock/'//lssfname
-c      read(*,'(a)') filecoefr
-c      write(*,*) 'LSS/Mock Fourier file :'
       call getarg(2,randfname)
       filecoef='/mount/chichipio2/hahn/FFT/manera_mock/'//randfname
-c      read(*,'(a)') filecoef
-c      write(*,*) 'INPUT Power Spectrum file :'
       call getarg(3,powerfname)
       filepower='/mount/chichipio2/hahn/power/manera_mock/'//powerfname
-c      read(*,'(a)') filepower
-c      write(*,*)'Survey scale (Mpc/h)'
       call getarg(4,sscale)
       read(sscale,*) akfun
       allocate(dcg(Ngrid/2+1,Ngrid,Ngrid),dcr(Ngrid/2+1,Ngrid,Ngrid))
 
       open(unit=4,file=filecoef,status='old',form='unformatted')
       read(4)dcg
-      read(4)P0m,Ng 
+      read(4)P0m,Ng,wsys
       close(4)
       open(unit=4,file=filecoefr,status='old',form='unformatted')
       read(4)dcr
@@ -41,7 +34,9 @@ c      write(*,*)'Survey scale (Mpc/h)'
          write(*,*)'P0s do not match'
          stop
       endif
-      alpha=float(Ng)/float(Nr) !now scale random integrals by alpha
+      WRITE(*,*) "Ngrid=",Ngrid,"Box=",akfun,"P0=",P0
+      WRITE(*,*) "Ng=",Ng,"Ng,sys=",wsys,"Nr=",Nr
+      alpha=wsys/float(Nr) !now scale random integrals by alpha
       I10=I10*alpha
       I12=I12*alpha
       I22=I22*alpha

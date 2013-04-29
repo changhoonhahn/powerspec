@@ -1,0 +1,19 @@
+pro sdssmock_cmass_radecmask
+	
+	readcol,'sdssmock_gamma_lrgFull_zm_oriana01a_no.real.rdcz.dat', mockra, mockdec, mockcz
+	
+	moc = {ra:0., dec:0.,z:0.}
+	mock = replicate(moc, n_elements(mockra))
+	mock.ra = mockra
+	mock.dec = mockdec
+	indx0 = where(mock.dec ge 48.0 and mock.ra ge 160.0) 
+	
+	mock = mock[indx0]
+	ra = mock.ra
+	dec = mock.dec
+	
+	openw, lun, 'sdssmock_cmass_radecmask.dat', /get_lun
+	for i = 0L, n_elements(mock)-1L do printf, lun, ra[i], dec[i], format='(f,f)'
+	free_lun, lun
+
+end 

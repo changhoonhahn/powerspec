@@ -40,6 +40,8 @@ c      complex dcg(Ngrid/2+1,Ngrid,Ngrid),dcr(Ngrid/2+1,Ngrid,Ngrid)
       endif
       alpha=wsys/float(Nr) !now scale random integrals by alpha
 !      alpha=float(Ng)/float(Nr)
+      WRITE(*,*) 'Ngalsys=',wsys,'Ngal=',Ng,'ratio=',wsys/float(Ng)
+      WRITE(*,*) 'Alpha=',alpha
       I10=I10*alpha
       I12=I12*alpha
       I22=I22*alpha

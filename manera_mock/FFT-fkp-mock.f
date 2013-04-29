@@ -16,6 +16,7 @@
       real alpha,P0,nb,weight,ar,akf,Fr,Fi,Gr,Gi
       real*8 I10,I12,I22,I13,I23,I33
       real kdotr,vol,xscale,rlow,rm(2)
+      real rwb,rwcp,rwred
       complex, allocatable :: dcg(:,:,:),dcr(:,:,:)
 c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
       character selfunfile*200,lssfile*200,randomfile*200,filecoef*200
@@ -60,7 +61,8 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
 !      write(*,*)'FKP weight P0?'
       call getarg(3,P0str) 
       read(P0str,*) P0
-
+        
+      WRITE(*,*) 'Ngrid=',Ngrid,'Box=',xscale,'P0=',P0
       call getarg(4,nbarfile)
       selfunfile="/mount/chichipio2/hahn/data/manera_mock/"//nbarfile
       open(unit=3,file=selfunfile,status='old',form='formatted')
@@ -128,7 +130,7 @@ c         close(7)
          write(*,*) fftname
          open(unit=4,file=fftname,status='unknown',form='unformatted')
          write(4)(((dcg(ix,iy,iz),ix=1,Lm/2+1),iy=1,Lm),iz=1,Lm)
-         write(4)P0,Ng         
+         write(4)P0,Ng,wsys 
          close(4)
 
        elseif (iflag.eq.1) then ! compute discretness integrals and FFT random mock
@@ -139,16 +141,16 @@ c         close(7)
          open(unit=4,file=fname,status='old',form='formatted')
          Nran=0 !Ngal will get determined later after survey is put into a box (Nr)
          do i=1,Nmax
-            read(4,*,end=15)ra,dec,az
+            read(4,*,end=15)ra,dec,az,rwb,rwcp,rwred
             ra=ra*(pi/180.)
             dec=dec*(pi/180.)
             rad=chi(az)
             wr(i)=1.0
+            Nran=Nran+1
             rr(1,i)=rad*cos(dec)*cos(ra)
             rr(2,i)=rad*cos(dec)*sin(ra)
             rr(3,i)=rad*sin(dec)
             nbr(i)=nbar(az,iflag)
-            Nran=Nran+1
          enddo
  15      continue
          close(4)
