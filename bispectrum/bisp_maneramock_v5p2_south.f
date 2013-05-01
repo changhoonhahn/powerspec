@@ -4,8 +4,8 @@ c  ifort -O4 -o 2.exe bisp_fast_bin_fftw2.f -L/usr/local/fftw_intel_s/lib -lsrff
       integer*8 planb,planf
 c* INPUT (Check) ************************************************************
 c      parameter(nside=180,nmax=30)
-      parameter(nside=240,nmax=80)
-c      parameter(nside=480,nmax=80)
+c      parameter(nside=240,nmax=80)
+      parameter(nside=480,nmax=80)
 c****************************************************************************
       parameter(Dim=3,nsideD=nside**Dim) 
       data nn/nside,nside,nside/
@@ -70,9 +70,6 @@ c         read(*,'(a)') file2
 c         write(*,*) 'Bispectrum file :'
          call getarg(4,filebisp)
 c         read(*,'(a)') filebisp         
-         write(*,*) file1
-         write(*,*) file2
-         write(*,*) filebisp
 
          allocate(dclr1(nside/2+1,nside,nside))
          allocate(dclr2(nside/2+1,nside,nside))

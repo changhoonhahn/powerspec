@@ -58,13 +58,6 @@ for j in range(len(P0)):
     truez_rsdnbar=np.zeros([120])
     n=0
     for i in range(1,11):
-        """if i == 28:
-            "bleh"
-        elif i == 110:
-            "bleh"
-        elif i == 577:
-            "bleh"
-        else: """
         if i < 10:
             f_opt2 = fname0+'00'+str(i)+fname1+"_now"+fname2+str(P0[j])+fname3
             f_opt1 = fname0+'00'+str(i)+fname1+"_wboss"+fname2+str(P0[j])+fname3

@@ -20,8 +20,7 @@
         EXTERNAL ps,pw
 
 !WINDOW POWER
-        CALL GETARG(1,POWERFNAME)
-        POWERFILE='/mount/chichipio2/hahn/power/'//POWERFNAME
+        CALL GETARG(1,POWERFILE)
         OPEN(UNIT=4,FILE=POWERFILE,STATUS='old',FORM='formatted')
         do i=1,wNbin
             read(4,*) k,Pg,Pg2,Pg4,Pr,Pr2,Pr4,dk,co
@@ -34,12 +33,12 @@
         maxwk=MAXVAL(wk)
 
 !SIMULATED POWER
-        CALL GETARG(2,SIMFNAME)
-        SIMFILE='/mount/chichipio2/hahn/power/'//SIMFNAME
+        CALL GETARG(2,SIMFILE)
         OPEN(UNIT=5,FILE=SIMFILE,STATUS='old',FORM='FORMATTED')
 
         DO i=1,sNbin
-            READ(5,*,END=13) k_k,PPg,PPg2,PPg4,PPr,PPr2,PPr4,ddk,cco
+c            READ(5,*,END=13) k_k,PPg,PPg2,PPg4,PPr,PPr2,PPr4,ddk,cco
+            READ(5,*,END=13) k_k,PPg
             sk(i)=DBLE(k_k)
             sPg(i)=DBLE(PPg)
         ENDDO
@@ -47,8 +46,7 @@
         CLOSE(5)
         CALL spline(sk,sPg,sNbin,3e30,3e30,sec2)
 
-        CALL GETARG(3,OUTFNAME)
-        OUTFILE='/mount/chichipio2/hahn/power/'//OUTFNAME
+        CALL GETARG(3,OUTFILE)
         OPEN(UNIT=7,FILE=OUTFILE,STATUS='unknown',FORM='formatted')
         tol=1.d-6
         iwr=0
