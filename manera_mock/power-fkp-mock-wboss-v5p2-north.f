@@ -1,6 +1,6 @@
       implicit none 
       integer Ngrid,ix,iy,iz,Nbins,nyq,iky,ikz,imk,i,Ibin,Ng,Nr
-      parameter(Ngrid=480,Nbins=240)
+      parameter(Ngrid=360,Nbins=180)
       complex, allocatable :: dcg(:,:,:),dcr(:,:,:)
 c      complex dcg(Ngrid/2+1,Ngrid,Ngrid),dcr(Ngrid/2+1,Ngrid,Ngrid)
       real avgk(Nbins),avgPg(Nbins),avgPr(Nbins),co(Nbins),rk,dk(Nbins)
@@ -12,23 +12,17 @@ c      complex dcg(Ngrid/2+1,Ngrid,Ngrid),dcr(Ngrid/2+1,Ngrid,Ngrid)
       complex ct
       
       call getarg(1,lssfname)
-      filecoefr='/mount/riachuelo1/hahn/FFT/manera_mock/'//
-     $'v5p2/'//lssfname
       call getarg(2,randfname)
-      filecoef='/mount/riachuelo1/hahn/FFT/manera_mock/'//
-     $'v5p2/'//randfname
       call getarg(3,powerfname)
-      filepower='/mount/riachuelo1/hahn/power/manera_mock/'//
-     $'v5p2/'//powerfname
       call getarg(4,sscale)
       read(sscale,*) akfun
       allocate(dcg(Ngrid/2+1,Ngrid,Ngrid),dcr(Ngrid/2+1,Ngrid,Ngrid))
 
-      open(unit=4,file=filecoef,status='old',form='unformatted')
+      open(unit=4,file=lssfname,status='old',form='unformatted')
       read(4)dcg
       read(4)P0m,Ng,wsys
       close(4)
-      open(unit=4,file=filecoefr,status='old',form='unformatted')
+      open(unit=4,file=randfname,status='old',form='unformatted')
       read(4)dcr
       read(4)I10,I12,I22,I13,I23,I33
       read(4)P0,Nr
@@ -91,7 +85,7 @@ c      complex dcg(Ngrid/2+1,Ngrid,Ngrid),dcr(Ngrid/2+1,Ngrid,Ngrid)
                end if
  100  continue
       akfun=6.28319/akfun
-      open(4,file=filepower,status='unknown',form='formatted')
+      open(4,file=powerfname,status='unknown',form='formatted')
       do 110 Ibin=1,Nbins
          if(co(Ibin).gt.0.)then
             avgk(Ibin)=avgk(Ibin)/co(Ibin)*akfun

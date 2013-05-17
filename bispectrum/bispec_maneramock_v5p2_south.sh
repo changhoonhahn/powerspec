@@ -3,8 +3,8 @@
 prefix="FFTcmass_dr10_south_ir4"
 bispec="BISPcmass_dr10_south_ir4"
 suffix=".v5.2.wghtv.txt"
-sscale=4000.0
-box="4000"
+sscale=3600.0
+box="3600"
 grid="480"
 iflag=2
 FFTdir="/mount/riachuelo1/hahn/FFT/manera_mock/v5p2/"

@@ -25,7 +25,7 @@
         WRITE(*,*) POWERFILE
 
         DO i=1,wNbin
-            read(4,*,END=12) wk,Pg,Pg2,Pg4,Pr,Pr2,Pr4,dk,co
+            read(4,*,END=12) k,Pg,Pg2,Pg4,Pr,Pr2,Pr4,dk,co
             wk(i)=DBLE(k)
             wPr(i)=DBLE(Pr)
         ENDDO
@@ -61,7 +61,7 @@ c            READ(5,*,END=13) k_k,PPg,PPg2,PPg4,PPr,PPr2,PPr4,ddk,cco
             KK=sk(i)
             CALL gabqx(ps,q1,q2,Pc,tol,iwr)
             Pconv(i)=2.0d0*DBLE(pi)*Pc
-            WRITE(*,*) KK,Pconv(i)
+c            WRITE(*,*) KK,Pconv(i)
         WRITE(7,1020) KK,Pconv(i)
         ENDDO
         WRITE(*,*) sPg(1), Pconv(1),sPg(1)/Pconv(1)

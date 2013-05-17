@@ -1,18 +1,17 @@
 #!/bin/bash
-#When changing the box size, grid size, or bin size the FFT and power code must each be manually adjusted.
 
 name0="cmass_dr10_south_ir4"
 nameend=".v5.2.wghtv.txt"
-randname="cmass_dr10_south_randoms_ir4_combined_wboss.v5.2.wghtv.txt"
+randname="cmass_dr10_NS_randoms_ir4_combined_wboss.v5.2.wghtv.txt"
 nbarfname="nbar-dr10v5-S-Anderson.dat"
-sscale=3600.0
-Rbox=1800.0
-box="3600"
+sscale=4800.0
+Rbox=2400.0
+box="4800"
 FFT="FFT"
 power="power_"
-grid="480"
+grid="240"
 
-ifort -O3 -o FFT-fkp-mock-wboss-v5p2-south.exe FFT-fkp-mock-wboss-v5p2-south.f -L/usr/local/fftw_intel_s/lib -lsfftw -lsfftw
+ifort -O3 -o FFT-fkp-mock-wboss-v5p2-NS.exe FFT-fkp-mock-wboss-v5p2-NS.f -L/usr/local/fftw_intel_s/lib -lsfftw -lsfftw
 
 for P0 in 20000
 do

@@ -3,12 +3,13 @@
       integer Ng,Nr,iflag,ic,Nbin,l,ipoly,wb,wcp,wred,flag
       integer*8 planf
       real pi,cspeed,Om0,OL0,redtru,m1,m2,zlo,zhi,garb1,garb2,garb3
-      parameter(Nsel=201,Nmax=2*10**8,Ngrid=480,Nbin=151,pi=3.141592654)
+      parameter(Nsel=201,Nmax=2*10**8,Ngrid=360,Nbin=151,pi=3.141592654)
       parameter(Om0=0.27,OL0=0.73)
       integer grid
       dimension grid(3)
       parameter(cspeed=299800.0)
       integer, allocatable :: ig(:),ir(:)
+      INTEGER clck_count_beg, clck_count_end, clck_rate
       real zbin(Nbin),dbin(Nbin),sec3(Nbin),zt,dum,gfrac
       real cz,sec2(Nsel),chi,nbar,Rbox,wsys
       real, allocatable :: nbg(:),nbr(:),rg(:,:),rr(:,:),wg(:),wr(:) 
@@ -28,12 +29,14 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
       common /interp3/dbin,zbin,sec3
       common /Nrandom/Nran
       external nbar,chi,nbar2,PutIntoBox,assign2,fcomb
-      include '/home/users/hahn/powercode/fftw_f77.i'
+      include '/usr/local/src/fftw-2.1.5/fortran/fftw_f77.i'
       grid(1) = Ngrid
       grid(2) = Ngrid
       grid(3) = Ngrid
       call fftwnd_f77_create_plan(planf,3,grid,FFTW_BACKWARD,
      $     FFTW_ESTIMATE + FFTW_IN_PLACE)
+
+      CALL SYSTEM_CLOCK( clck_count_beg, clck_rate )
 
       zmax=1.1
       do ic=1,Nbin
@@ -64,9 +67,7 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
         
       WRITE(*,*) 'Ngrid=',Ngrid,'Box=',xscale,'P0=',P0
       call getarg(4,nbarfile)
-      selfunfile="/mount/riachuelo1/hahn/data/manera_mock/"//
-     $"v5p2/"//nbarfile
-      open(unit=3,file=selfunfile,status='old',form='formatted')
+      open(unit=3,file=nbarfile,status='old',form='formatted')
       do l=1,Nsel
             read(3,*,end=12) zt,zlo,zhi,numden,garb1,garb2,garb3
             z(l)= zt
@@ -78,13 +79,9 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
       call spline(z,selfun,Nsel,3e30,3e30,sec)
 
       if (iflag.eq.0) then ! run on mock
-      
-!         write(*,*)'Mock Survey File'
          call getarg(5,lssfile)
-         fname='/mount/riachuelo1/hahn/'//
-     &   'data/manera_mock/v5p2/'//lssfile 
          allocate(rg(3,Nmax),nbg(Nmax),ig(Nmax),wg(Nmax))
-         open(unit=4,file=fname,status='old',form='formatted')
+         open(unit=4,file=lssfile,status='old',form='formatted')
          Ngal=0 !Ngal will get determined later after survey is put into a box (Ng)
          wsys=0.0
          do i=1,Nmax
@@ -125,23 +122,18 @@ c         close(7)
 !         write(*,*) 'recombination done!'
 
 !         write(*,*) 'Fourier file :'
-         call getarg(6,filecoef)
-!         write(*,*) filecoef
-         fftname='/mount/riachuelo1/hahn/FFT/manera_mock/'//
-     $   'v5p2/'//filecoef
-         write(*,*) fftname
+         call getarg(6,fftname)
          open(unit=4,file=fftname,status='unknown',form='unformatted')
          write(4)(((dcg(ix,iy,iz),ix=1,Lm/2+1),iy=1,Lm),iz=1,Lm)
          write(4)P0,Ng,wsys 
          close(4)
+         CALL system_clock( clck_count_end, clck_rate )
+         WRITE(*,*) (clck_count_end - clck_count_beg)/REAL(clck_rate)
 
        elseif (iflag.eq.1) then ! compute discretness integrals and FFT random mock
-!         write(*,*)'Random Survey File'
          call getarg(5,randomfile)
-         fname='/mount/riachuelo1/hahn/data/manera_mock/'//
-     $   'v5p2/'//randomfile
          allocate(rr(3,Nmax),nbr(Nmax),ir(Nmax),wr(Nmax))
-         open(unit=4,file=fname,status='old',form='formatted')
+         open(unit=4,file=randomfile,status='old',form='formatted')
          Nran=0 !Ngal will get determined later after survey is put into a box (Nr)
          do i=1,Nmax
             read(4,*,end=15)ra,dec,az,rwb,rwcp,rwred
@@ -191,10 +183,7 @@ c         close(7)
 !         write(*,*) 'recombination done!'
 
 !         write(*,*) 'Fourier file :'
-         call getarg(6,filecoef)
-         fftname='/mount/riachuelo1/hahn/FFT/manera_mock/'//
-     $   'v5p2/'//filecoef
-         write(*,*) fftname
+         call getarg(6,fftname)
          open(unit=4,file=fftname,status='unknown',form='unformatted')
          write(4)(((dcr(ix,iy,iz),ix=1,Lm/2+1),iy=1,Lm),iz=1,Lm)
          write(4)real(I10),real(I12),real(I22),real(I13),real(I23),

@@ -98,7 +98,13 @@ ax00.grid(True)
 ax01.grid(True)
 #py.show()
 
+klimlo = transfer[:,0] >= min(data_opt2[:,0])
+klimhi = transfer[:,0] <= max(data_opt2[:,0])
+
+transfk = (transfer[:,0])[klimlo & klimhi]
+transfp = (A2[0]*P)[klimlo & klimhi]
+
 outfname = "transfunc-ariana-opt2-peakpivot.dat"
 outputfile = open(outfname,'w')
-for j in range(0,len(P)):
-    outputfile.write(str(transfer[j,0])+'\t'+str(A2[0]*P[j])+'\n')
+for j in range(0,len(transfk)):
+    outputfile.write(str(transfk[j])+'\t'+str(transfp[j])+'\n')

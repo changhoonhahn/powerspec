@@ -24,7 +24,7 @@ pro build_cmass_ns_data,prename,endname,nzw=nzw,wcomp=wcomp
     z[0:n_elements(ndata)-1L] = ndata.z
     z[n_elements(ndata):n_elements(ndata)+n_elements(sdata)-1L] = sdata.z
 
-    if keyword_set(nzw) then fname = prename+'-full-'+endname+'-nzw-zlim-wstaronly.dat'
+    if keyword_set(nzw) then fname = prename+'-full-'+endname+'-nzw-zlim.dat'
     if keyword_set(wcomp) then fname = prename+'-full-'+endname+'-wcomp.dat'
 
     if keyword_set(nzw) then begin

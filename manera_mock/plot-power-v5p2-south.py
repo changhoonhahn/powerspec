@@ -48,7 +48,7 @@ transfpivot=interpolate.interp1d(transfer[:,0],P,kind='quadratic')(0.05)
 
 fname0 = "power_cmass_dr10_south_ir4"
 fname1 = ".v5.2.wghtv.txt"
-fname2 = ".grid240.P0"
+fname2 = ".grid480.P0"
 fname3 = ".box4800"
 for j in range(len(P0)):
     option1=np.zeros([120])
