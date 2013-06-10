@@ -8,7 +8,7 @@ rc('text', usetex=True)
 rc('font', family='serif')
 
 bispec_dir = '/mount/riachuelo1/hahn/bispec/manera_mock/v5p2/'
-bispec_fname0 = 'BISPcmass_dr10_north_ir4'
+bispec_fname0 = 'BISPcmass_dr10_south_ir4'
 bispec_fname1 = '.v5.2.wghtv.txt.grid360.nmax40.nstep3.P020000.box3600'
 
 for i in range(1,601):
@@ -44,9 +44,8 @@ for i in range(1,601):
 
 Q_scatter = np.sqrt( Q_scat/float(i) )/Q_avg
 
-bispec_cmass_N = np.loadtxt('/mount/riachuelo1/hahn/bispec/bispec-cmass-dr10v8-N-ngalsys-360bin-180bin.dat.grid.nmax40.nstep3.P020000.box3600')
-bispec_cmass_full = np.loadtxt('/mount/riachuelo1/hahn/bispec/bispec-cmass-dr10v8-full-ngalsys-360bin-180bin.dat.grid.nmax40.nstep3.P020000.box3600')
-boss_mock = bispec_cmass_N[:,7]/Q_avg
+bispec_cmass_S = np.loadtxt('/mount/riachuelo1/hahn/bispec/bispec-cmass-dr10v8-S-ngalsys-360bin-180bin.dat.grid.nmax40.nstep3.P020000.box3600')
+boss_mock = bispec_cmass_S[:,7]/Q_avg
 
 uniq_kmax = np.unique(Q_kmax)
 Q_SN = []
@@ -91,8 +90,8 @@ ax30.legend(loc='best')
 
 fig4 = plt.figure(4, figsize = (15,6))
 ax40 = fig4.add_subplot(111)
-ax40.scatter( range( 0, len(bispec_cmass_N[:,7]) ), bispec_cmass_N[:,7], s=7, c='k', label=r"$Q_{123,dr10v8-N}$" )
-ax40.scatter( range( 0, len(bispec_cmass_full[:,7]) ), bispec_cmass_full[:,7], s=7, c='g', label=r"$Q_{123,dr10v8-full}$" )
+ax40.scatter( range( 0, len(bispec_cmass_S[:,7]) ), bispec_cmass_S[:,7], s=7, c='k', label=r"$Q_{123,dr10v8-South}$" )
+#ax40.scatter( range( 0, len(bispec_cmass_full[:,7]) ), bispec_cmass_full[:,7], s=7, c='g', label=r"$Q_{123,dr10v8-full}$" )
 ax40.scatter( range( 0, len(Q_avg) ), Q_avg, s=7, c='r', label=r"$\overline{Q_{123,Mock}}$" )
 ax40.set_xlim([0,6500])
 ax40.set_xlabel('Triangles', fontsize = 15 )
@@ -102,10 +101,9 @@ ax40.legend(loc='best')
 kfund = 2.0*np.pi/(3600.0)
 fig5 = plt.figure(5, figsize = (8,8))
 ax50 = fig5.add_subplot(111)
-ax50.loglog( kfund*uniq_kmax, Q_SN ,label=r'S/N(k) for $Q_{123}$ of 600 Manera Mocks')
+ax50.loglog( kfund*uniq_kmax, Q_SN ,label=r'S/N(k) for $Q_{123}$ of 600 Manera Mocks v5p2 South')
 ax50.set_xlim([10**-3,10**0])
 ax50.set_xlabel(r'k',fontsize=25)
 ax50.set_ylabel('S/N', fontsize=25)
 ax50.legend(loc='best')
 
-py.show()
