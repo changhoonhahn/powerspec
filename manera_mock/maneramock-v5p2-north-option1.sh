@@ -18,7 +18,7 @@ powerdir="/mount/riachuelo1/hahn/power/manera_mock/v5p2/"
 
 for P0 in 20000 
 do
-    for i in {1..1}
+    for i in {1..2}
     do
         echo $i
         echo $P0
@@ -31,7 +31,7 @@ do
             fname[$i]=$datadir$name0"0"$i$nameend
             FFTname[$i]=$FFTdir$FFT$name0"0"$i$nameend".grid"$grid".P0"$P0".box"$box
         else
-            fname[$i]=$data$name0$i$nameend
+            fname[$i]=$datadir$name0$i$nameend
             FFTname[$i]=$FFTdir$FFT$name0$i$nameend".grid"$grid".P0"$P0".box"$box
         fi
         echo ${fname[$i]}
@@ -51,7 +51,7 @@ do
 
     ifort -O3 -o power-fkp-mock-wboss-v5p2-north.exe power-fkp-mock-wboss-v5p2-north.f
 
-    for i in {1..1}
+    for i in {1..2}
     do
         if [ $i -lt 10 ]
         then

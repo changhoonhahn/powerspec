@@ -8,18 +8,16 @@ rc('text', usetex=True)
 rc('font', family='serif')
 
 bispec_dir = '/mount/riachuelo1/hahn/bispec/manera_mock/v5p2/'
-bispec_fname = 'BISPcmass_dr10_south_ir4001.v5.2.wghtv.txt.grid480.P020000.box4000'
+bispec_fname = 'BISPcmass_dr10_north_ir4276.v5.2.wghtv.txt.grid360.nmax40.nstep3.P020000.box3600'
 power_dir = '/mount/riachuelo1/hahn/power/manera_mock/v5p2/'
-power_fname = 'power_cmass_dr10_south_ir4001.v5.2.wghtv.txt_wboss.grid480.P020000.box4000'
+power_fname = 'power_cmass_dr10_north_ir4276.v5.2.wghtv.txt_wboss.grid360.P020000.box3600'
 
-k_fund = (2*m.pi)/(4000.0)
+k_fund = (2.0*m.pi)/(3600.0)
 bisp_data = np.loadtxt(bispec_dir+bispec_fname)
 power_data = np.loadtxt(power_dir+power_fname)
 
-fig0 = plt.figure(1, figsize=(21,8))
-ax00 = fig0.add_subplot(131)
-ax01 = fig0.add_subplot(132)
-ax02 = fig0.add_subplot(133)
+fig0 = plt.figure(1, figsize=(7,8))
+ax00 = fig0.add_subplot(111)
 
 fig1 = plt.figure(2, figsize=(15,6))
 ax1 = fig1.add_subplot(111)
@@ -28,12 +26,7 @@ fig2 = plt.figure(3, figsize=(12,7))
 ax20 = fig2.add_subplot(111)
 
 ax00.scatter([k_fund*x for x in bisp_data[:,0]], bisp_data[:,3], label=r'$P(k_{1})$')
-ax01.scatter([k_fund*x for x in bisp_data[:,1]], bisp_data[:,4], label=r'$P(k_{2})$')
-ax02.scatter([k_fund*x for x in bisp_data[:,2]], bisp_data[:,5], label=r'$P(k_{3})$')
-
 ax00.loglog(power_data[:,0],power_data[:,1],'m--',linewidth=2,label=r"$P(k)$ (Option 1)")
-ax01.loglog(power_data[:,0],power_data[:,1],'m--',linewidth=2,label=r"$P(k)$ (Option 1)")
-ax02.loglog(power_data[:,0],power_data[:,1],'m--',linewidth=2,label=r"$P(k)$ (Option 1)")
 
 ax1.scatter(range(0,len(bisp_data[:,7])), bisp_data[:,7], s=2, label=r'$Q_{123}$')
 
@@ -63,26 +56,26 @@ ax20.scatter(range(0,len(mid)), mid, c='r',marker='^',label=r"$mid(k_1,k_2,k_3)$
 ax20.scatter(range(0,len(max)), max, c='r',marker='+',label=r"$max(k_1,k_2,k_3)$ for $Q_{123} < 0$")
 
 ax00.set_xlim([10**-3,10**0])
-ax01.set_xlim([10**-3,10**0])
-ax02.set_xlim([10**-3,10**0])
-ax1.set_xlim([0,50000])
+#ax01.set_xlim([10**-3,10**0])
+#ax02.set_xlim([10**-3,10**0])
+#ax1.set_xlim([0,50000])
 ax20.set_xlim([0,40])
 
 ax00.set_ylim([10**3,10**5.2])
-ax01.set_ylim([10**3,10**5.2])
-ax02.set_ylim([10**3,10**5.2])
+#ax01.set_ylim([10**3,10**5.2])
+#ax02.set_ylim([10**3,10**5.2])
 ax1.set_ylim([-2, 4])
 
 ax00.set_xscale('log')
-ax01.set_xscale('log')
-ax02.set_xscale('log')
+#ax01.set_xscale('log')
+#ax02.set_xscale('log')
 ax00.set_yscale('log')
-ax01.set_yscale('log')
-ax02.set_yscale('log')
+#ax01.set_yscale('log')
+#ax02.set_yscale('log')
 
 ax00.set_xlabel(r"$k_{1}$", fontsize=18)
-ax01.set_xlabel(r"$k_{2}$", fontsize=18)
-ax02.set_xlabel(r"$k_{3}$", fontsize=18)
+#ax01.set_xlabel(r"$k_{2}$", fontsize=18)
+#ax02.set_xlabel(r"$k_{3}$", fontsize=18)
 ax1.set_xlabel("Triangles", fontsize=15)
 ax20.set_xlabel(r"Triangles with $Q_{123} < 0$", fontsize=15)
 ax00.set_ylabel(r"$P(k)$", fontsize=15)
@@ -90,14 +83,17 @@ ax1.set_ylabel(r"$Q_{123}$", fontsize=15)
 ax20.set_ylabel(r"$min(k_1,k_2,k_3)$", fontsize=15)
 
 ax00.grid(True)
-ax01.grid(True)
-ax02.grid(True)
+#ax01.grid(True)
+#ax02.grid(True)
 
 ax00.legend(loc='best')
-ax01.legend(loc='best')
-ax02.legend(loc='best')
+#ax01.legend(loc='best')
+#ax02.legend(loc='best')
 ax20.legend(loc='best')
 
 figdir = '/home/users/hahn/figures/boss/bispectrum/'
-fig2.savefig(figdir+'bispec_maneramock_v5p2_S_mink_midk_negq123.png')
-#py.show()
+
+fig0.savefig(figdir+'bispec_maneramock_v5p2_N_ir4576_powercheck.png')
+fig1.savefig(figdir+'bispec_maneramock_v5p2_N_ir4576_q123.png')
+fig2.savefig(figdir+'bispec_maneramock_v5p2_N_ir4576_mink_midk_negq123.png')
+py.show()

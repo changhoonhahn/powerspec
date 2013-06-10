@@ -3,7 +3,7 @@
       integer Ng,Nr,iflag,ic,Nbin,l,ipoly,wb,wcp,wred,flag
       integer*8 planf
       real pi,cspeed,Om0,OL0,redtru,m1,m2,zlo,zhi,garb1,garb2,garb3
-      parameter(Nsel=201,Nmax=2*10**8,Ngrid=480,Nbin=151,pi=3.141592654)
+      parameter(Nsel=201,Nmax=2*10**8,Ngrid=360,Nbin=151,pi=3.141592654)
       parameter(Om0=0.27,OL0=0.73)
       integer grid
       dimension grid(3)

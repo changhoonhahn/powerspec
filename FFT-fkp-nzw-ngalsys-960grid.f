@@ -26,7 +26,7 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
       common /interpol/z,selfun,sec
       common /interpol2/ra,sec2
       common /interp3/dbin,zbin,sec3
-      common /radint/Om0,OL0
+c      common /radint/Om0,OL0
       common /Nrandom/Nran
       external nbar,chi,nbar2,PutIntoBox,assign2,fcomb
       include 'fftw_f77.i'
@@ -100,7 +100,7 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
          write(*,*) 'recombination done!'
 
          write(*,*) 'Fourier file :'
-         CALL GETARG(5,filecoef)
+         CALL GETARG(5,outname)
 !         outname='/global/data/scr/chh327/powercode/FFT/'//filecoef
          open(unit=4,file=outname,status='unknown',form='unformatted')
          write(4)(((dcg(ix,iy,iz),ix=1,Lm/2+1),iy=1,Lm),iz=1,Lm)
@@ -446,9 +446,10 @@ c^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       integer iflag
       real z(Nsel),selfun(Nsel),sec(Nsel),self,az,qq,area_ang
       common /interpol/z,selfun,sec
-      common/radint/Om0,OL0
+c      common/radint/Om0,OL0
       common /zbounds/zmin,zmax
       real Om0,OL0
+      PARAMETER(Om0=0.27,OL0=0.73)
       external chi
       az=QQ
 c      if (az.lt.zmin-0.05 .or. az.gt.0.47) then
@@ -483,7 +484,9 @@ c^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       integer neval,ier,iord(limit),last
       real*8 alist(limit),blist(limit),elist(limit),rlist(limit)
       external rdi,dqage
-      common/radint/Om0,OL0
+c      common/radint/Om0,OL0
+      PARAMETER(Om0=0.27,OL0=0.73)
+
       qmin=0.d0
       qmax=dble(x)
       epsabs=0.d0
@@ -495,8 +498,9 @@ c^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       END
 c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
       real*8 function rdi(z) !radial distance integrand
-c^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      common/radint/Om0,OL0
+c^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^     
+c      common/radint/Om0,OL0      
+      PARAMETER(Om0=0.27,OL0=0.73)
       real Om0,OL0
       real*8 z
       rdi=3000.d0/dsqrt(OL0+(1.d0-Om0-OL0)*(1.d0+z)**2+Om0*(1.d0+z)**3)

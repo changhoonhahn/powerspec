@@ -5,8 +5,8 @@ bispec="BISPcmass_dr10_north_ir4"
 suffix=".v5.2.wghtv.txt"
 sscale=3600.0
 box="3600"
-grid="480"
-nmax="53"
+grid="360"
+nmax="40"
 nstep="3"
 ncut="3"
 iflag=2
@@ -18,7 +18,7 @@ ifort -O4 -o bisp_maneramock_v5p2.exe bisp_maneramock_v5p2.f -L/usr/local/fftw_i
 for P0 in 20000
 do
     randFFTname=$FFTdir"FFTcmass_dr10_north_randoms_ir4_combined_wboss.v5.2.wghtv.txt.grid"$grid".P0"$P0".box"$box
-    for i in {1..1}
+    for i in {2..2}
     do 
         if [ $i -lt 10 ]
         then 

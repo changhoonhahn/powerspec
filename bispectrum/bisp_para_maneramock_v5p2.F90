@@ -2,12 +2,12 @@
 module common_mod 
 implicit none 
 
-integer,parameter :: nside=480
-integer :: nmax=80
-integer :: Ncut =2 
-integer :: istep = 2 
+integer,parameter :: nside=360
+integer :: nmax=40
+integer :: Ncut =3 
+integer :: istep =3 
 integer :: n_thread = 5  !nsideD must be divisible by n_thread  
-character(len=255) ::  filecounts='/home/users/rs123/Code/Fortran/counts2_n480_nmax80_ncut2_s2'
+character(len=255) :: filecounts='/home/users/rs123/Code/Fortran/counts2_n480_nmax80_ncut2_s2'
 
 integer, parameter :: Dim=3
 integer :: nsideD  =  nside**Dim  
@@ -137,7 +137,10 @@ real(8),dimension(:,:,:), allocatable ::  coun
 real(8) ::  avg, sum
 complex, dimension(:,:,:), allocatable :: dclr1 , dclr2        
 integer :: bisp_num 
+integer :: clck_count_beg,clck_count_end,clck_rate
 character(len=255):: filebisp,filecoef,file1,file2,iflagstr
+
+!CALL SYSTEM_CLOCK(clck_count_beg,clck_rate)
 
 nn = nside  
 allocate(nk(0:2*nside ), nbk(0:2*nside+1  ) ) 
@@ -348,6 +351,9 @@ do l = ncut/int(step), nmax
 end do
 
 close(7)
+
+!CALL SYSTEM_CLOCK(clck_count_end,clck_rate)
+!WRITE(*,*) (clck_count_end-clck_count_beg)/REAL(clck_rate)
 
 1000 format(3I4, 6e13.5)
 

@@ -5,8 +5,8 @@ c  ifort -O4 -o 2.exe bisp_fast_bin_fftw2.f -L/usr/local/fftw_intel_s/lib -lsrff
 c* INPUT (Check) ************************************************************
 c      parameter(nside=180,nmax=30)
 c      parameter(nside=240,nmax=80)
-c      parameter(nside=360,nmax=40)
-      parameter(nside=480,nmax=53)
+      parameter(nside=360,nmax=40)
+c      parameter(nside=480,nmax=53)
 c****************************************************************************
       parameter(Dim=3,nsideD=nside**Dim) 
       data nn/nside,nside,nside/
@@ -30,8 +30,8 @@ c      real normk(nsideD,nmax), norm1(2,nsideD)
 c* INPUT (Check) ************************************************************
 c      filecounts='~/Code/Fortran/counts2_n180_nmax30_ncut2_s2.be'
       homedir='/home/users/hahn/powercode/bispectrum/'
-c      file1='counts2_n360_nmax40_ncut3_s3'
-      file1='counts2_n480_nmax53_ncut3_s3'
+      file1='counts2_n360_nmax40_ncut3_s3'
+c      file1='counts2_n480_nmax53_ncut3_s3'
 c      file1='counts2_n240_nmax80_ncut2_s1'
       filecounts=homedir(1:len_trim(homedir))//file1(1:len_trim(file1))
       Ncut=3

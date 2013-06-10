@@ -3,7 +3,7 @@ import pylab as py
 import matplotlib.pyplot as plt
 from scipy import interpolate
 
-#will  = np.loadtxt('gCMASS_all.lpow')
+will  = np.loadtxt('gCMASS_all.lpow')
 
 path = '/mount/chichipio2/hahn/power/'
 

@@ -24,8 +24,16 @@ pro build_cmass_ns_data,prename,endname,nzw=nzw,wcomp=wcomp
     z[0:n_elements(ndata)-1L] = ndata.z
     z[n_elements(ndata):n_elements(ndata)+n_elements(sdata)-1L] = sdata.z
 
-    if keyword_set(nzw) then fname = prename+'-full-'+endname+'-nzw-zlim.dat'
-    if keyword_set(wcomp) then fname = prename+'-full-'+endname+'-wcomp.dat'
+    if keyword_set(nzw) then begin 
+        nsfname = prename+'-full-'+endname+'-nzw-zlim.dat'
+        nfname = prename+'-N-'+endname+'-nzw-zlim.dat'
+        sfname = prename+'-S-'+endname+'-nzw-zlim.dat'
+    endif 
+    if keyword_set(wcomp) then begin
+        nsfname = prename+'-full-'+endname+'-wcomp.dat'
+        nfname = prename+'-N-'+endname+'-wcomp.dat'
+        sfname = prename+'-S-'+endname+'-wcomp.dat'
+    endif
 
     if keyword_set(nzw) then begin
         weight[0:n_elements(ndata)-1L] = ndata.weight_fkp*ndata.weight_star*(ndata.weight_noz+ndata.weight_cp-1.0)
@@ -38,7 +46,13 @@ pro build_cmass_ns_data,prename,endname,nzw=nzw,wcomp=wcomp
     nbar[0:n_elements(ndata)-1L] = ndata.nz 
     nbar[n_elements(ndata):n_elements(ndata)+n_elements(sdata)-1L] = sdata.nz
     
-    openw, lun, path+'data/'+fname, /get_lun
+    openw, lun, path+'data/'+nfname, /get_lun
+        for i=0L,n_elements(ndata)-1L do printf, lun, ra[i], dec[i], z[i], weight[i], nbar[i], format='(f,f,f,f,f)'
+    free_lun, lun 
+    openw, lun, path+'data/'+sfname, /get_lun
+        for i=n_elements(ndata),n_elements(ndata)+n_elements(sdata)-1L do printf, lun, ra[i], dec[i], z[i], weight[i], nbar[i], format='(f,f,f,f,f)'
+    free_lun, lun
+    openw, lun, path+'data/'+nsfname, /get_lun
         for i=0L,n_elements(ra)-1L do printf, lun, ra[i], dec[i], z[i], weight[i], nbar[i], format='(f,f,f,f,f)'
     free_lun, lun 
     
@@ -74,9 +88,23 @@ pro build_cmass_ns_data,prename,endname,nzw=nzw,wcomp=wcomp
     rnbar[0:n_elements(nrand)-1L] = nrand.nz
     rnbar[n_elements(nrand):n_elements(nrand)+n_elements(srand)-1L] = srand.nz
     
-    if keyword_set(nzw) then fname = prename+'-full-'+endname+'-nzw-zlim.ran.dat'
-    if keyword_set(wcomp) then fname = prename+'-full-'+endname+'-wcomp.ran.dat'
-    openw, lun, path+'data/'+fname,/get_lun
+    if keyword_set(nzw) then begin 
+        nsfname = prename+'-full-'+endname+'-nzw-zlim.ran.dat' 
+        nfname = prename+'-N-'+endname+'-nzw-zlim.ran.dat'
+        sfname = prename+'-S-'+endname+'-nzw-zlim.ran.dat'
+    endif
+    if keyword_set(wcomp) then begin 
+        nsfname = prename+'-full-'+endname+'-wcomp.ran.dat'
+        nfname = prename+'-N-'+endname+'-wcomp.ran.dat'
+        sfname = prename+'-S-'+endname+'-wcomp.ran.dat'
+    endif
+    openw, lun, path+'data/'+nfname,/get_lun
+        for i=0L,n_elements(nrand)-1L do printf,lun,rra[i],rdec[i],rz[i],rweight[i], rnbar[i], format='(f,f,f,f,f)'
+    free_lun, lun
+    openw, lun, path+'data/'+sfname,/get_lun
+        for i=n_elements(nrand),n_elements(nrand)+n_elements(srand)-1L do printf,lun,rra[i],rdec[i],rz[i],rweight[i], rnbar[i], format='(f,f,f,f,f)'
+    free_lun, lun
+    openw, lun, path+'data/'+nsfname,/get_lun
         for i=0L,n_elements(rra)-1L do printf,lun,rra[i],rdec[i],rz[i],rweight[i], rnbar[i], format='(f,f,f,f,f)'
     free_lun, lun
 end

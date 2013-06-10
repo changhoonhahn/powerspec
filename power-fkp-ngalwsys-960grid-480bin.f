@@ -7,22 +7,20 @@ c      complex dcg(Ngrid/2+1,Ngrid,Ngrid),dcr(Ngrid/2+1,Ngrid,Ngrid)
       real avgk(Nbins),avgPg(Nbins),avgPr(Nbins),co(Nbins),rk,dk(Nbins)
       real avgPg2(Nbins),avgPr2(Nbins),avgPg4(Nbins),avgPr4(Nbins)
       character filecoef*200,filecoefr*200,filepower*200
-      character randfft*200,lssfft*200,powername*200
+      character randfft*200,lssfft*200,powername*200,akfunstr*200
       real akfun,I10,I12,I22,I13,I23,I33,P0,alpha,P0m
       real cot1,coga,Le2,Le4,pk,wsys
       complex ct
       
       write(*,*) 'Random Fourier file :'
-      read(*,'(a)') filecoefr
-      randfft='/global/data/scr/chh327/powercode/FFT/'//filecoefr
+      CALL GETARG(1,randfft)
       write(*,*) 'LSS/Mock Fourier file :'
-      read(*,'(a)') filecoef
-      lssfft='/global/data/scr/chh327/powercode/FFT/'//filecoef
+      CALL GETARG(2,lssfft)
       write(*,*) 'INPUT Power Spectrum file :'
-      read(*,'(a)') filepower
-      powername='/global/data/scr/chh327/powercode/power/'//filepower
+      CALL GETARG(3,powername)
       write(*,*)'Survey scale (Mpc/h)'
-      read(*,*) akfun      
+      CALL GETARG(4,akfunstr)
+      READ(akfunstr,*) akfun
       allocate(dcg(Ngrid/2+1,Ngrid,Ngrid),dcr(Ngrid/2+1,Ngrid,Ngrid))
 
       open(unit=4,file=lssfft,status='old',form='unformatted')
