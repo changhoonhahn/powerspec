@@ -107,4 +107,6 @@ ax50.set_xlabel(r'k',fontsize=25)
 ax50.set_ylabel('S/N', fontsize=25)
 ax50.legend(loc='best')
 
+
+
 #py.show()
