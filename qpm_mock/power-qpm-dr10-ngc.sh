@@ -31,11 +31,11 @@ do
         elif [ $i -lt 100 ]
         then
             fname[$i]=$datadir$name0"00"$i$nameend
-            FFTname[$i]=$FFTdir$fft$name0"00"$i$nameend".grid"$grid".p0"$p0".box"$box
+            FFTname[$i]=$FFTdir$FFT$name0"00"$i$nameend".grid"$grid".p0"$p0".box"$box
         elif [ $i -lt 1000 ]
         then
             fname[$i]=$datadir$name0"0"$i$nameend
-            FFTname[$i]=$FFTdir$fft$name0"0"$i$nameend".grid"$grid".p0"$p0".box"$box
+            FFTname[$i]=$FFTdir$FFT$name0"0"$i$nameend".grid"$grid".p0"$p0".box"$box
         else
             fname[$i]=$datadir$name0$i$nameend
             FFTname[$i]=$FFTdir$FFT$name0$i$nameend".grid"$grid".P0"$P0".box"$box
