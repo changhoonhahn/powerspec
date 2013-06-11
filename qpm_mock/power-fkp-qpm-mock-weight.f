@@ -34,6 +34,8 @@ c      complex dcg(Ngrid/2+1,Ngrid,Ngrid),dcr(Ngrid/2+1,Ngrid,Ngrid)
       endif
       WRITE(*,*) "Ngrid=",Ngrid,"Box=",akfun,"P0=",P0
       WRITE(*,*) "Ng=",Ng,"Ng,sys=",wsysg,"Nr=",Nr,"Nr,sys=",wsysr
+      WRITE(*,*) "Ng,sys/Ng",wsysg/float(Ng),"Nr,sys/Nr",wsysr/float(Nr)
+      WRITE(*,*) "Old Alpha",float(Ng)/float(Nr),"New Alpha",wsysg/wsysr
       alpha=wsysg/wsysr !now scale random integrals by alpha
       I10=I10*alpha
       I12=I12*alpha

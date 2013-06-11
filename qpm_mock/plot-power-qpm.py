@@ -16,7 +16,12 @@ fig1 = plt.figure(1, figsize=(7,8))
 ax11 = fig1.add_subplot(111)
 
 files=[]
-for i in range(1,1001):
+n = 0
+#nrange = range(1,1001)
+#nrange = range(1,501)+range(601,1001)
+nrange = range(601,1001)
+#nrange = range(1,543)+range(545,1001)
+for i in nrange:
     if i < 10:
         mockname = fname0+'000'+str(i)+fname1+'_weight.grid360.P020000.box4000'
     elif i < 100:
@@ -31,7 +36,7 @@ for i in range(1,1001):
     except IOError:
         print 'file ',i,' does not exist.'
 
-
+n = len(files)
 for i in files:
     if i < 10:
         mockname = fname0+'000'+str(i)+fname1+'_weight.grid360.P020000.box4000'
@@ -43,14 +48,15 @@ for i in files:
         mockname = fname0+str(i)+fname1+'_weight.grid360.P020000.box4000'
 
     mock = np.loadtxt(dir+mockname)
-#    ax11.loglog( mock[:,0], mock[:,1], 'k--', linewidth=1 )
-    if i==1:
+    if mock[0,1] > 10**6:
+        print 'Unusual P(k),', i, mock[0,1]
+    if i==files[0]:
         mock_tot = mock[:,1]
         mock_k = mock[:,0]
     else:
         mock_tot = mock_tot + mock[:,1]
-
-mock_avg = mock_tot/float(i)
+print n
+mock_avg = mock_tot/float(n)
 ax11.loglog( mock_k, mock_avg, color='b', linewidth=2, label=r"$\overline{P(k)}$ for QPM Mocks NGC")
 
 cmass_data = np.loadtxt("/mount/riachuelo1/hahn/power/power-cmass-dr10v8-N-Anderson-nzw-zlim-ngalsys-360bin-180bin.dat")

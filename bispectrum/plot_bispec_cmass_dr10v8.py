@@ -6,11 +6,11 @@ from matplotlib import rc
 
 rc('text', usetex=True)
 rc('font', family='serif')
-
+NS='S'
 bispec_dir = '/mount/riachuelo1/hahn/bispec/'
-bispec_fname = 'bispec-cmass-dr10v8-full-ngalsys-360bin-180bin.dat.grid.nmax40.nstep3.P020000.box3600'
+bispec_fname = 'bispec-cmass-dr10v8-'+NS+'-ngalsys-360bin-180bin.dat.grid.nmax40.nstep3.P020000.box3600'
 power_dir = '/mount/riachuelo1/hahn/power/'
-power_fname = 'power-cmass-dr10v8-full-Anderson-nzw-zlim-ngalsys-360bin-180bin.dat'
+power_fname = 'power-cmass-dr10v8-'+NS+'-Anderson-nzw-zlim-ngalsys-360bin-180bin.dat'
 
 k_fund = (2.0*m.pi)/(3600.0)
 bisp_data = np.loadtxt(bispec_dir+bispec_fname)
@@ -91,4 +91,8 @@ ax00.legend(loc='best')
 #ax02.legend(loc='best')
 ax20.legend(loc='upper left')
 
-py.show()
+figdir = '/home/users/hahn/figures/boss/bispectrum/'
+fig0.savefig(figdir+'bispec_cmass_dr10v8_'+NS+'_powercheck.png')
+fig1.savefig(figdir+'bispec_cmass_dr10v8_'+NS+'_q123.png')
+fig2.savefig(figdir+'bispec_cmass_dr10v8_'+NS+'_allk_neg123.png')
+#py.show()
