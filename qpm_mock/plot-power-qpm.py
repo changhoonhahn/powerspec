@@ -19,7 +19,7 @@ files=[]
 n = 0
 #nrange = range(1,1001)
 #nrange = range(1,501)+range(601,1001)
-nrange = range(601,1001)
+nrange = range(1,542)+[543]+range(545,1000)
 #nrange = range(1,543)+range(545,1001)
 for i in nrange:
     if i < 10:
@@ -69,4 +69,6 @@ ax11.set_ylabel('P(k)',fontsize=20)
 ax11.legend(loc='best',prop={'size':15})
 ax11.grid(True)
 
-py.show()
+figdir = '/home/users/hahn/figures/boss/powerspectrum/qpm_mock/'
+fig1.savefig(figdir+'cmass-dr10v8-N-qpmmock-1_1000-minus542_544-pbar.png')
+#py.show()
