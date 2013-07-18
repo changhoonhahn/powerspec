@@ -7,55 +7,33 @@ from matplotlib import rc
 rc('text', usetex=True)
 rc('font', family='serif')
 
-bispec_dir = '/mount/riachuelo1/hahn/bispec/qpm_mock/'
-bispec_fname0 = 'BISP-a0.6452_'
-bispec_fname1 = '.dr10_ngc.rdzw.grid360.nmax40.nstep3.P020000.box4000'
+bispec_dir = '/mount/riachuelo1/hahn/bispec/manera_mock/dr11/'
+bispec_fname0 = 'BISPcmass_dr11_south_ir4'
+bispec_fname1 = '.v7.0.wghtv.txt.grid360.nmax40.nstep3.P020000.box3600'
 
-n = 0
-nrange = range(1, 1001)
-files = []
-for i in nrange:
+for i in range(1,601):
     if i < 10:
-        bisp_name = bispec_fname0+'000'+str(i)+bispec_fname1
-    elif i < 100:
         bisp_name = bispec_fname0+'00'+str(i)+bispec_fname1
-    elif i < 1000:
+    elif i < 100:
         bisp_name = bispec_fname0+'0'+str(i)+bispec_fname1
     else:
         bisp_name = bispec_fname0+str(i)+bispec_fname1
-    try:
-        with open(bispec_dir+bisp_name):
-            files.append(i)
-    except IOError:
-        print 'file ',i,' does not exist.'
 
-for i in files:
-    if i < 10:
-        bisp_name = bispec_fname0+'000'+str(i)+bispec_fname1
-    elif i < 100:
-        bisp_name = bispec_fname0+'00'+str(i)+bispec_fname1
-    elif i < 1000:
-        bisp_name = bispec_fname0+'0'+str(i)+bispec_fname1
-    else:
-        bisp_name = bispec_fname0+str(i)+bispec_fname1
-    n = n + 1
     bisp_data = np.loadtxt(bispec_dir+bisp_name)
 
-    if i == files[0]:
+    if i == 1:
         Q_comb = bisp_data[:,7]
         Q_kmax = bisp_data[:,0]
     else:
         Q_comb = Q_comb + bisp_data[:,7]
-print n
+print i
 Q_avg = Q_comb / float(i)
 
 Q_scat = np.zeros( [len(Q_avg)] )
-for i in files:
+for i in range(1,601):
     if i < 10:
-        bisp_name = bispec_fname0+'000'+str(i)+bispec_fname1
-    elif i < 100:
         bisp_name = bispec_fname0+'00'+str(i)+bispec_fname1
-    elif i < 1000:
+    elif i < 100:
         bisp_name = bispec_fname0+'0'+str(i)+bispec_fname1
     else:
         bisp_name = bispec_fname0+str(i)+bispec_fname1
@@ -66,7 +44,7 @@ for i in files:
 
 Q_scatter = np.sqrt( Q_scat/float(i) )/Q_avg
 
-bispec_cmass_N = np.loadtxt('/mount/riachuelo1/hahn/bispec/bispec-cmass-dr10v8-N-ngalsys-360bin-180bin.dat.grid.nmax40.nstep3.P020000.box3600')
+bispec_cmass_N = np.loadtxt('/mount/riachuelo1/hahn/bispec/bispec-cmass-dr11v0-S-ngalsys-360bin-180bin.dat.grid.nmax40.nstep3.P020000.box3600')
 boss_mock = bispec_cmass_N[:,7]/Q_avg
 
 uniq_kmax = np.unique(Q_kmax)
@@ -105,16 +83,15 @@ ax30 = fig3.add_subplot(111)
 #ax30.scatter( range( 0, len(boss_mock) ), boss_mock, s=3, label = r'S\frac{Q_{BOSS}}{\overline{Q_{mock}}}$' )
 ax30.errorbar( range( 0, len(boss_mock) ), boss_mock, yerr=Q_scatter, fmt='ko' )
 ax30.set_xlim([0,6500])
-#ax30.set_ylim([0.5,2])
+ax30.set_ylim([-10.0,10.0])
 ax30.set_xlabel("Triangles", fontsize = 15 )
 ax30.set_ylabel(r'$\frac{Q_{BOSS}}{\overline{Q_{mock}}}$', fontsize=25)
 ax30.legend(loc='best')
 
 fig4 = plt.figure(4, figsize = (15,6))
 ax40 = fig4.add_subplot(111)
-ax40.scatter( range( 0, len(bispec_cmass_N[:,7]) ), bispec_cmass_N[:,7], s=7, c='k', label=r"$Q_{123,dr10v8-N}$" )
-#ax40.scatter( range( 0, len(bispec_cmass_full[:,7]) ), bispec_cmass_full[:,7], s=7, c='g', label=r"$Q_{123,dr10v8-full}$" )
-ax40.scatter( range( 0, len(Q_avg) ), Q_avg, s=7, c='r', label=r"$\overline{Q_{123,QPM Mock dr10 NGC}}$" )
+ax40.scatter( range( 0, len(bispec_cmass_N[:,7]) ), bispec_cmass_N[:,7], s=7, c='k', label=r"$Q_{123,dr11v1-N}$" )
+ax40.scatter( range( 0, len(Q_avg) ), Q_avg, s=7, c='r', label=r"$\overline{Q_{123,Mock}}$" )
 ax40.set_xlim([0,6500])
 ax40.set_xlabel('Triangles', fontsize = 15 )
 ax40.set_ylabel(r"$Q_{123}$", fontsize = 25 )
@@ -123,17 +100,15 @@ ax40.legend(loc='best')
 kfund = 2.0*np.pi/(3600.0)
 fig5 = plt.figure(5, figsize = (8,8))
 ax50 = fig5.add_subplot(111)
-ax50.loglog( kfund*uniq_kmax, Q_SN ,label=r'S/N(k) for $Q_{123}$ of all QPM Mocks')
+ax50.loglog( kfund*uniq_kmax, Q_SN ,label=r'S/N(k) for $Q_{123}$ of 600 Manera Mocks')
 ax50.set_xlim([10**-3,10**0])
 ax50.set_xlabel(r'k',fontsize=25)
 ax50.set_ylabel('S/N', fontsize=25)
 ax50.legend(loc='best')
 
-figdir = '/home/users/hahn/figures/boss/bispectrum/qpm_mock/'
-fig1.savefig(figdir+'bispec_qpm_dr10_ngc_allmock_qbar.png')
-fig2.savefig(figdir+'bispec_qpm_dr10_ngc_allmock_deltaq_qbar.png')
-fig3.savefig(figdir+'bispec_cmass_dr10v8_N_qpm_allmock_Qboss_Qbarmock_ratio.png')
-fig4.savefig(figdir+'bispec_cmass_dr10v8_N_qpm_allmock_Qboss_Qbarmock.png')
-fig5.savefig(figdir+'bispec_cmass_dr10v8_N_qpm_allmock_Qboss_Qbarmock_SigNoise.png')
-
-#py.show()
+fig1.savefig('/home/users/hahn/figures/boss/bispectrum/bispec_maneramock_v7p0_S_all_qbar.png')
+fig2.savefig('/home/users/hahn/figures/boss/bispectrum/bispec_maneramock_v7p0_S_all_delq_qbar.png')
+fig3.savefig('/home/users/hahn/figures/boss/bispectrum/bispec_cmass_dr11v0_S_Qboss_Qbar_v7p0mock_ratio.png')
+fig4.savefig('/home/users/hahn/figures/boss/bispectrum/bispec_cmass_dr11v0_S_Qboss_Qbar_v7p0mock.png')
+fig5.savefig('/home/users/hahn/figures/boss/bispectrum/bispec_cmass_dr11v0_S_Qboss_qbar_v7p0mock_SigNoise.png')
+py.show()

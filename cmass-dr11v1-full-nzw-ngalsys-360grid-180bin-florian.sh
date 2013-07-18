@@ -1,6 +1,6 @@
 #!/bin/bash
 
-name0="cmass-dr10v8-"
+name0="cmass-dr11v1-"
 nameend="-Anderson-nzw-zlim"
 ext=".dat"
 ranext=".ran.dat"
@@ -9,7 +9,7 @@ Rbox=1800.0
 box="3600"
 fftext="-ngalsys-"$box"lbox-360grid.dat"
 fftranext="-ngalsys-"$box"lbox-360grid.ran.dat"
-pwrext="-ngalsys-"$box"lbox-360bin-180bin.dat"
+pwrext="-florian-ngalsys-"$box"lbox-360bin-180bin.dat"
 FFT="FFT-"
 power="power-"
 
@@ -27,7 +27,7 @@ do
         FFTname=$FFTdir$FFT$name0$field$nameend$fftext
         echo $fname
         echo $FFTname
-        ./FFT-fkp-nzw-ngalsys-360grid.exe $Rbox 0 $P0 $fname $FFTname
+#        ./FFT-fkp-nzw-ngalsys-360grid.exe $Rbox 0 $P0 $fname $FFTname
 
         randfname=$datadir$name0$field$nameend$ranext
         FFTrandname=$FFTdir$FFT$name0$field$nameend$fftranext
@@ -40,10 +40,10 @@ do
             echo "now it does"
         fi
 
-        ifort -O3 -o power-fkp-ngalwsys-360grid-180bin.exe power-fkp-ngalwsys-360grid-180bin.f
+        ifort -O3 -o power-fkp-ngalwsys-360grid-180bin-florian.exe power-fkp-ngalwsys-360grid-180bin-florian.f
         powername=$powerdir$power$name0$field$nameend$pwrext
         
-        ./power-fkp-ngalwsys-360grid-180bin.exe $FFTrandname $FFTname $powername $sscale
+        ./power-fkp-ngalwsys-360grid-180bin-florian.exe $FFTrandname $FFTname $powername $sscale
         echo $powername
     done
 done

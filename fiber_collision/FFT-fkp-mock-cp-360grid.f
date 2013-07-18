@@ -4,7 +4,7 @@
       integer Ng,Nr,iflag,ic,Nbin,l,ipoly,wb,wcp,wred,flag
       integer*8 planf
       real pi,cspeed,Om0,OL0,redtru,m1,m2,zlo,zhi,garb1,garb2,garb3
-      parameter(Nsel=201,Nmax=2*10**8,Ngrid=240,Nbin=151,pi=3.141592654)
+      parameter(Nsel=201,Nmax=2*10**8,Ngrid=360,Nbin=151,pi=3.141592654)
       parameter(Ncp=131,Om0=0.27,OL0=0.73)
       integer grid
       dimension grid(3)
@@ -208,10 +208,8 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
 
 !         write(*,*) 'Fourier file :'
          call getarg(7,filecoef)
-!         write(*,*) filecoef
-         fftname='/mount/chichipio2/hahn/FFT/manera_mock/'//filecoef
-         write(*,*) fftname
-         open(unit=6,file=fftname,status='unknown',form='unformatted')
+         write(*,*) filecoef
+         open(unit=6,file=filecoef,status='unknown',form='unformatted')
          write(6)(((dcg(ix,iy,iz),ix=1,Lm/2+1),iy=1,Lm),iz=1,Lm)
          write(6)P0,Ng,wsys 
          close(6)

@@ -1,8 +1,8 @@
-pro build_cmass_ns_data,prename,endname,nzw=nzw,wcomp=wcomp
+pro build_cmass_ns_data,dr_version,nzw=nzw,wcomp=wcomp
     path = get_path(/powercode)
 
-    Ngal = mrdfits(path+'data/'+prename+'-N-'+endname+'.dat.fits',1)
-    Sgal = mrdfits(path+'data/'+prename+'-S-'+endname+'.dat.fits',1)
+    Ngal = mrdfits(path+'data/cmass-'+dr_version+'-N-Anderson.dat.fits',1)
+    Sgal = mrdfits(path+'data/cmass-'+dr_version+'-S-Anderson.dat.fits',1)
 
     nzindx = where(Ngal.z ge 0.43 and Ngal.z le 0.7) 
     szindx = where(Sgal.z ge 0.43 and Sgal.z le 0.7)
@@ -25,14 +25,14 @@ pro build_cmass_ns_data,prename,endname,nzw=nzw,wcomp=wcomp
     z[n_elements(ndata):n_elements(ndata)+n_elements(sdata)-1L] = sdata.z
 
     if keyword_set(nzw) then begin 
-        nsfname = prename+'-full-'+endname+'-nzw-zlim.dat'
-        nfname = prename+'-N-'+endname+'-nzw-zlim.dat'
-        sfname = prename+'-S-'+endname+'-nzw-zlim.dat'
+        nsfname = 'cmass-'+dr_version+'-full-Anderson-nzw-zlim.dat'
+        nfname = 'cmass-'+dr_version+'-N-Anderson-nzw-zlim.dat'
+        sfname = 'cmass-'+dr_version+'-S-Anderson-nzw-zlim.dat'
     endif 
     if keyword_set(wcomp) then begin
-        nsfname = prename+'-full-'+endname+'-wcomp.dat'
-        nfname = prename+'-N-'+endname+'-wcomp.dat'
-        sfname = prename+'-S-'+endname+'-wcomp.dat'
+        nsfname = 'cmass-'+dr_version+'-full-Anderson-wcomp.dat'
+        nfname = 'cmass-'+dr_version+'-N-Anderson-wcomp.dat'
+        sfname = 'cmass-'+dr_version+'-S-Anderson-wcomp.dat'
     endif
 
     if keyword_set(nzw) then begin
@@ -56,8 +56,8 @@ pro build_cmass_ns_data,prename,endname,nzw=nzw,wcomp=wcomp
         for i=0L,n_elements(ra)-1L do printf, lun, ra[i], dec[i], z[i], weight[i], nbar[i], format='(f,f,f,f,f)'
     free_lun, lun 
     
-    nran = mrdfits(path+'data/'+prename+'-N-'+endname+'.ran.fits',1)
-    sran = mrdfits(path+'data/'+prename+'-S-'+endname+'.ran.fits',1)
+    nran = mrdfits(path+'data/cmass-'+dr_version+'-N-Anderson.ran.fits',1)
+    sran = mrdfits(path+'data/cmass-'+dr_version+'-S-Anderson.ran.fits',1)
     nrzindx=where(nran.z ge 0.43 and nran.z le 0.7)
     srzindx=where(sran.z ge 0.43 and sran.z le 0.7)
     nrand=nran[nrzindx]
@@ -89,14 +89,14 @@ pro build_cmass_ns_data,prename,endname,nzw=nzw,wcomp=wcomp
     rnbar[n_elements(nrand):n_elements(nrand)+n_elements(srand)-1L] = srand.nz
     
     if keyword_set(nzw) then begin 
-        nsfname = prename+'-full-'+endname+'-nzw-zlim.ran.dat' 
-        nfname = prename+'-N-'+endname+'-nzw-zlim.ran.dat'
-        sfname = prename+'-S-'+endname+'-nzw-zlim.ran.dat'
+        nsfname = 'cmass-'+dr_version+'-full-Anderson-nzw-zlim.ran.dat' 
+        nfname = 'cmass-'+dr_version+'-N-Anderson-nzw-zlim.ran.dat'
+        sfname = 'cmass-'+dr_version+'-S-Anderson-nzw-zlim.ran.dat'
     endif
     if keyword_set(wcomp) then begin 
-        nsfname = prename+'-full-'+endname+'-wcomp.ran.dat'
-        nfname = prename+'-N-'+endname+'-wcomp.ran.dat'
-        sfname = prename+'-S-'+endname+'-wcomp.ran.dat'
+        nsfname = 'cmass-'+dr_version+'-full-Anderson-wcomp.ran.dat'
+        nfname = 'cmass-'+dr_version+'-N-Anderson-wcomp.ran.dat'
+        sfname = 'cmass-'+dr_version+'-S-Anderson-wcomp.ran.dat'
     endif
     openw, lun, path+'data/'+nfname,/get_lun
         for i=0L,n_elements(nrand)-1L do printf,lun,rra[i],rdec[i],rz[i],rweight[i], rnbar[i], format='(f,f,f,f,f)'

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-name0="cmass-dr10v8-"
+name0="cmass-dr11v2-"
 nameend="-Anderson-nzw-zlim"
 ext=".dat"
 ranext=".ran.dat"
@@ -9,7 +9,7 @@ Rbox=1800.0
 box="3600"
 fftext="-ngalsys-"$box"lbox-360grid.dat"
 fftranext="-ngalsys-"$box"lbox-360grid.ran.dat"
-pwrext="-ngalsys-"$box"lbox-360bin-180bin.dat"
+pwrext="-ngalsys-"$box"lbox-360grid-180bin.dat"
 FFT="FFT-"
 power="power-"
 
@@ -21,7 +21,7 @@ powerdir="/mount/riachuelo1/hahn/power/"
 
 for P0 in 20000
 do
-    for field in N S
+    for field in full N S
     do
         fname=$datadir$name0$field$nameend$ext
         FFTname=$FFTdir$FFT$name0$field$nameend$fftext

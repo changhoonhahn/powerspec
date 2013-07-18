@@ -54,13 +54,6 @@ for j in range(len(P0)):
     truered2=np.zeros([120])
     n=0
     for i in range(1,11):
-        """if i == 28:
-            "bleh"
-        elif i == 110:
-            "bleh"
-        elif i == 577:
-            "bleh"
-        else: """
         if i < 10:
             powername='power_cmass_dr10_north_ir400'+str(i)+'.v5.1.wght.txt_now.grid240.P0'+str(P0[j])+'.box4800'
             powername1='power_cmass_dr10_north_ir400'+str(i)+'.v5.1.wght.txt_wboss.grid240.P0'+str(P0[j])+'.box4800'
@@ -90,7 +83,7 @@ for j in range(len(P0)):
         truered2 = truered2+datatruered2[:,1]
         n=n+1
 
-#        l=ax.loglog(data[:,0],data[:,1],color[j],linewidth=3,label="P0="+str(P0[j])+' Option 2')
+        l=ax.loglog(data[:,0],data[:,1],color[j],linewidth=3,label="P0="+str(P0[j])+' Option 2')
         l=ax.loglog(datacp[:,0],datacp[:,1],color[j],linewidth=2,label="P0="+str(P0[j])+' Close Pair Corrected')
         l1=ax1.loglog(data1[:,0],data1[:,1],color[j]+'--',linewidth=2,label="P0="+str(P0[j])+" Option 1")
 
