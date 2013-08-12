@@ -9,13 +9,13 @@ rc('font', family='serif')
 
 n = input('PTHalo n=') 
 prismdir = '/global/data/scr/chh327/powercode/data/'
-disp_los = np.loadtxt(prismdir+'cmass_dr11_north_ir4'+str(n)+'v7.0_disp_los.dat')
+disp_los = np.loadtxt(prismdir+'cmass_dr11_north_ir4'+str(n)+'v7.0_disp_los_pm.dat')
 disp_perp = np.loadtxt(prismdir+'cmass_dr11_north_ir4'+str(n)+'v7.0_disp_perp.dat')
 #disp_los_disttail_red = np.loadtxt(prismdir+'cmass_dr11_north_ir4467v7.0_disp_los_disttail_redshift.dat')
 #disp_los_disttail_red_hist = np.loadtxt(prismdir+'cmass_dr11_north_ir4467v7.0_disp_los_disttail_redshift_hist.dat')
 data = np.loadtxt('/global/data/scr/chh327/powercode/data/cmass_dr11_north_ir4'+str(n)+'.v7.0.wghtv.txt')
 
-mpc_bin = 0.1*np.array(range(10001))
+mpc_bin = -1000.0+0.1*np.array(range(20001))
 mpc_bin_perp = 0.05*np.array(range(20))
 #red_bin = 0.005*np.array(range(len(disp_los_disttail_red_hist)))+0.005
 
@@ -41,12 +41,12 @@ def expon(x,sig):
 disp_los_x = [ (hist_disp_los[1][i] + hist_disp_los[1][i+1])/2.0 for i in range(len(hist_disp_los[1])-1) ]
 disp_perp_x = [ (hist_disp_perp[1][i] + hist_disp_perp[1][i+1])/2.0 for i in range(len(hist_disp_perp[1])-1) ]
 
-popt, pcov = curve_fit(expon, np.array(disp_los_x[0:100]), hist_disp_los[0][0:100])
+popt, pcov = curve_fit(expon, np.array(disp_los_x[10000:10100]), hist_disp_los[0][10000:10100])
 print popt
 
 ax1.plot(disp_los_x, hist_disp_los[0],linewidth=3, label=r'Histogram of $d_{LOS}$')
-ax1.plot(disp_los_x, expon(np.array(disp_los_x), popt[0]), 'r', linewidth=3, label=r'Exponential distribution with $\sigma=$'+str(popt))
-ax1.set_xlim([0,10])
+ax1.plot(disp_los_x[10000:10100], expon(np.array(disp_los_x[10000:10100]), popt[0]), 'r', linewidth=3, label=r'Exponential distribution with $\sigma=$'+str(popt))
+ax1.set_xlim([-10,10])
 ax1.set_xlabel('Displacement (Mpc)')
 ax1.set_ylabel('Number of Galaxies')
 ax1.legend(loc='best')
@@ -63,9 +63,9 @@ output[:,0] = disp_los_x
 output[:,1] = hist_disp_los_normed[0]
 
 ax2.plot(output[:,0],output[:,1])
-ax2.set_ylim([0,1.2]) 
-ax2.set_xlim([0,20])
-np.savetxt(prismdir+'pthalo-ir4'+str(n)+'-dr11-v7p0-N-disp_los_hist_normed.dat', output)
+ax2.set_ylim([0,1]) 
+ax2.set_xlim([-10,10])
+np.savetxt(prismdir+'pthalo-ir4'+str(n)+'-dr11-v7p0-N-disp_los_hist_pm_normed.dat', output)
 
 #for d in [2.5,5.0,7.5]:
 #    RMSfrac = float(len(disp_los[(disp_los<d) & (disp_los>-d)]))/float(len(disp_los))*100.0

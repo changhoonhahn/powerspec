@@ -16,10 +16,23 @@ pro fibcoll_cmass, north=north, south=south
     w_cp = cmass_data.weight_cp
     w_noz = cmass_data.weight_noz
 
-    fib_angscale = 0.01722  ;Angular fiber collision scale
-    spherematch, ra, dec, ra, dec, fib_angscale, m1, m2, d12, maxmatch=0
+    upcp_indx = where(w_cp gt 1) 
+    ra_upcp = ra[upcp_indx]
+    dec_upcp = dec[upcp_indx] 
+    red_upcp = red[upcp_indx] 
 
-    gal_m1 = m1[uniq(m1,sort(m1))]
+    nocp_indx = where(w_cp eq 0) 
+    ra_nocp = ra[nocp_indx] 
+    dec_nocp = dec[nocp_indx] 
+    red_nocp = red[nocp_indx] 
+
+    print,'Number of galaxies with w_cp > 1=',n_elements(upcp_indx) 
+    print,'Number of galaxies with w_cp = 0=',n_elements(nocp_indx) 
+
+    fib_angscale = 0.01722  ;Angular fiber collision scale
+    spherematch, ra_nocp, dec_nocp, ra_upcp, de_upcp, fib_angscale, m_nocp, m_upcp, d12, maxmatch=0
+
+    gal_upcp = m_upcp[uniq(m_upcp,sort(m_upcp))]
 
     disp_los = [] 
     disp_perp = [] 
@@ -65,7 +78,7 @@ pro fibcoll_cmass, north=north, south=south
                 d_los[j] = -sqrt((LOS_x[j]-targ_x)^2+(LOS_y[j]-targ_y)^2+(LOS_z[j]-targ_z)^2)
             endelse
         endfor 
-
+        ;d_los = sqrt((LOS_x-targ_x)^2+(LOS_y-targ_y)^2+(LOS_z-targ_z)^2)
         d_perp = sqrt((neigh_x-LOS_x)^2+(neigh_y-LOS_y)^2+(neigh_z-LOS_z)^2)
 
         for ii=0L,n_elements(d_los)-1L do begin
@@ -81,15 +94,16 @@ pro fibcoll_cmass, north=north, south=south
      
 ;Outputting to files: 
 ;Line-of-Sight Displacemenet: 
-    openw, lun, prismdir+'cmass-dr11v2-'+NS+'-Anderson-disp_los.dat', /get_lun 
+;    openw, lun, prismdir+'cmass-dr11v2-'+NS+'-Anderson-disp_los.dat', /get_lun 
+    openw, lun, prismdir+'cmass-dr11v2-'+NS+'-Anderson-disp_los_pm.dat', /get_lun 
         for i=0L, n_elements(disp_los)-1L do printf, lun, disp_los[i], format='(f)'
     free_lun, lun
 ;Perpendicular Displacement:
-    openw, lun, prismdir+'cmass-dr11v2-'+NS+'-Anderson-disp_perp.dat', /get_lun 
-        for i=0L, n_elements(disp_perp)-1L do printf, lun, disp_perp[i], format='(f)'
-    free_lun, lun
+;    openw, lun, prismdir+'cmass-dr11v2-'+NS+'-Anderson-disp_perp.dat', /get_lun 
+;        for i=0L, n_elements(disp_perp)-1L do printf, lun, disp_perp[i], format='(f)'
+;    free_lun, lun
 ;Redshift of Tail of LOS Displacement: 
-    openw, lun, prismdir+'cmass-dr11v2-'+NS+'-Anderson-tail_red.dat', /get_lun 
-        for i=0L, n_elements(tail_red)-1L do printf, lun, tail_red[i], format='(f)'
-    free_lun, lun
+;    openw, lun, prismdir+'cmass-dr11v2-'+NS+'-Anderson-tail_red.dat', /get_lun 
+;        for i=0L, n_elements(tail_red)-1L do printf, lun, tail_red[i], format='(f)'
+;    free_lun, lun
 end 

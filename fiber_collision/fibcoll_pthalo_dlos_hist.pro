@@ -1,5 +1,6 @@
-pro fibcoll_displ_hist, n, north=north, south=south
-    datadir='/global/data/scr/chh327/powercode/data/'
+pro fibcoll_pthalo_dlos_hist, n, north=north, south=south
+;    datadir='/global/data/scr/chh327/powercode/data/'
+    datadir='/mount/riachuelo1/hahn/data/manera_mock/dr11/'
     if keyword_set(north) then NS='north'
     if keyword_set(south) then NS='south'
 
@@ -87,8 +88,7 @@ pro fibcoll_displ_hist, n, north=north, south=south
         endelse 
     endfor 
 
-    openw, lun, datadir+'cmass_dr11_'+NS+'_ir4'+strmid(strtrim(string(n+1000),1),1)+'v7.0_disp_los.dat', /get_lun
-        openw, lun, datadir+'cmass_dr11_'+NS+'_ir4'+strmid(strtrim(string(n+1000),1),1)+'v7.0_disp_los_pm.dat', /get_lun
+    openw, lun, datadir+'cmass_dr11_'+NS+'_ir4'+strmid(strtrim(string(n+1000),1),1)+'v7.0_disp_los_pm.dat', /get_lun
         for i=0L,n_elements(disp_los)-1L do printf, lun, disp_los[i], format='(f)'
     free_lun, lun 
 end

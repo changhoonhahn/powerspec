@@ -5,39 +5,37 @@
       integer*8 planf
       real pi,cspeed,Om0,OL0,redtru,m1,m2,zlo,zhi,garb1,garb2,garb3
       parameter(Nsel=201,Nmax=2*10**8,Ngrid=360,Nbin=151,pi=3.141592654)
-      parameter(Ncp=10000,Om0=0.27,OL0=0.73)
+      parameter(Ncp=20000,Om0=0.27,OL0=0.73)
       integer grid
       dimension grid(3)
       parameter(cspeed=299800.0)
       integer, allocatable :: ig(:),ir(:)
-      real zbin(Nbin),dbin(Nbin),sec3(Nbin),zt,dum,gfrac,cpzt,cpnzt,pz
-      real cz,sec2(Nsel),chi,nbar,Rbox,wsys,wwsys,cpnbar,nbarchi
-      real zdis
+      real zbin(Nbin),dbin(Nbin),sec3(Nbin),zt,dum,gfrac,cprt,cpprt,pr
+      real cz,sec2(Nsel),chi,nbar,Rbox,wsys,wwsys,cppofr,nbarchi
       real, allocatable :: nbg(:),nbr(:),rg(:,:),rr(:,:),wg(:),wr(:)
       real, allocatable :: wwg(:)
       real selfun(Nsel),z(Nsel),sec(Nsel),zmin,zmax,az,ra,dec,rad,numden
-      REAL chiselfun(Nsel),chiz(Nsel),chisec(Nsel)
-      REAL cpnz(Ncp),cpr(Ncp),cpsec(Ncp)
+      REAL selfunchi(Nsel),dm(Nsel),chisec(Nsel)
+      REAL cppr(Ncp),cpr(Ncp),cpsec(Ncp)
       real alpha,P0,nb,weight,ar,akf,Fr,Fi,Gr,Gi
       real*8 I10,I12,I22,I13,I23,I33
       real kdotr,vol,xscale,rlow,rm(2)
       real rwb,rwcp,rwred
-      real ran1, ran2, ran3
+      real ran1, ran2
       complex, allocatable :: dcg(:,:,:),dcr(:,:,:)
 c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
       character selfunfile*200,lssfile*200,randomfile*200,filecoef*200
-      CHARACTER dlosfile*200,cpnbarfname*200,cpranname*200
+      CHARACTER dlosfile*200,cpranname*200
       character spltest*200,nbarfile*200
       character fname*200,fftname*200
       character Rboxstr*200,iflagstr*200,P0str*200
       common /interpol/z,selfun,sec
-      common /chizinterpol/chiz,chiselfun,chisec
+      common /dminterpol/dm,selfunchi,chisec
       common /interpol2/ra,sec2
       common /interp3/dbin,zbin,sec3
-      COMMON /cpinterpol/cpr,cpnz,cpsec
+      COMMON /cpinterpol/cpr,cppr,cpsec
       common /Nrandom/Nran
-      external nbar,chi,nbar2,PutIntoBox,assign2,fcomb,cpnbar,nbarchi
-      external zdis
+      external nbar,chi,nbar2,PutIntoBox,assign2,fcomb,cppofr,nbarchi
       include '/home/users/hahn/powercode/fftw_f77.i'
       grid(1) = Ngrid
       grid(2) = Ngrid
@@ -45,14 +43,6 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
       call fftwnd_f77_create_plan(planf,3,grid,FFTW_BACKWARD,
      $     FFTW_ESTIMATE + FFTW_IN_PLACE)
 
-      zmax=1.1
-      do ic=1,Nbin
-         zt=zmax*float(ic-1)/float(Nbin-1)
-         zbin(ic)=zt
-         dbin(ic)=chi(zt)
-      enddo
-      call spline(dbin,zbin,Nbin,3e30,3e30,sec3)
-      
       call getarg(1,Rboxstr)
       read(Rboxstr,*) Rbox
 
@@ -75,29 +65,29 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
       do l=1,Nsel
             read(3,*,end=12) zt,zlo,zhi,numden,garb1,garb2,garb3
             z(l)= zt
-            chiz(l)=chi(zt) 
+            dm(l)=chi(zt) 
             selfun(l)=numden
-            chiselfun(l)=numden
+            selfunchi(l)=numden
       enddo
  12   continue
       close(3)
       
       call spline(z,selfun,Nsel,3e30,3e30,sec)
-      call spline(chiz,selfun,Nsel,3e30,3e30,chisec)
+      call spline(dm,selfunchi,Nsel,3e30,3e30,chisec)
+
 ! Reading in normalized d_LOS histogram: 
       call getarg(5,dlosfile)
       OPEN(unit=5,file=dlosfile,status='old',form='formatted')
       DO k=1,Ncp
-            READ(5,*,END=14) cpzt,cpnzt
-            cpr(k)=cpzt
-            cpnz(k)=cpnzt
+            READ(5,*,END=14) cprt,cpprt
+            cpr(k)=cprt
+            cppr(k)=cpprt
       ENDDO
  14   CONTINUE
       CLOSE(5)
-      WRITE(*,*) cpr(1), cpr(10000)
-
-      call spline(cpr,cpnz,Ncp,3e30,3e30,cpsec)
-
+      WRITE(*,*) cpr(1), cpr(20000)
+      call spline(cpr,cppr,Ncp,3e30,3e30,cpsec)
+      
       if (iflag.eq.0) then ! run on mock
          call getarg(6,lssfile)
          allocate(rg(3,Nmax),nbg(Nmax),ig(Nmax),wg(Nmax),wwg(Nmax))
@@ -119,11 +109,9 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
             wNgal=wNgal+1
             wwsys=wwsys+wwg(i)
 
-! If w_cp <= 1 then proceed as ususal: 
-            IF (wcp.gt.0 .and. wcp.le.1 .and. wb.gt.0 
-     &      .and. wred.gt.0) THEN 
-                ra=ra*(pi/180.)
-                dec=dec*(pi/180.)
+            ra=ra*(pi/180.)
+            dec=dec*(pi/180.)
+            IF (wcp.eq.1 .and. wb.gt.0 .and. wred.gt.0) THEN 
                 rad=chi(az)
                 wg(Ngal+1)=float(wb)*(float(wcp)+float(wred)-1.0)
                 rg(1,Ngal+1)=rad*cos(dec)*cos(ra)
@@ -132,14 +120,8 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
                 nbg(Ngal+1)=nbar(az,iflag)
                 wsys=wsys+wg(Ngal+1)
                 Ngal=Ngal+1
-! If wcp > 1 then we generate a second galaxy based on the probability density generated
-! from the normalized d_LOS histogram
             ELSEIF (wcp.gt.1 .and. wb.gt.0 .and. wred.gt.0) THEN
-! One galaxy in the close pair location 
-                ra=ra*(pi/180.)
-                dec=dec*(pi/180.)
                 rad=chi(az)
-! One of the close pair galaxies has wg=1
                 wg(Ngal+1)=float(wb)*float(wred)
                 rg(1,Ngal+1)=rad*cos(dec)*cos(ra)
                 rg(2,Ngal+1)=rad*cos(dec)*sin(ra)
@@ -148,50 +130,31 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
                 wsys=wsys+wg(Ngal+1)
                 Ngal=Ngal+1
                 
-! The other galaxy will have a randomly generated redshift within the range of 0.43<z<0.7
-                CALL RANDOM_NUMBER(ran1) 
-                CALL RANDOM_NUMBER(ran2)
-                CALL RANDOM_NUMBER(ran3) 
-                ran2=ran2*(cpr(10000)+cpr(1))
-                pz=cpnbar(ran2)
-                DO WHILE (pz .le. ran1)
-                    CALL RANDOM_NUMBER(ran1)
+                DO WHILE (wcp .gt. 1)
+                    rad=chi(az)
+                    CALL RANDOM_NUMBER(ran1) 
                     CALL RANDOM_NUMBER(ran2)
-                    ran2=ran2*(cpr(10000)+cpr(1))
-                    pz=cpnbar(ran2)
-                ENDDO
-                cpranname='/mount/riachuelo1/hahn'//
-     &          '/data/manera_mock/dr11/cp-rand-testing.dat'
-                OPEN(unit=8,file=cpranname,status='unknown'
-     &          ,form='formatted')
-                WRITE(8,1015) ran2,pz
-! Unless adding or subtracting the d_LOS puts the galaxy outside the z-limits
-! Half the times it will add the d_LOS the other half it will subtract the d_LOS
-                IF (ran3 .ge. 0.5) THEN 
-                    IF ( rad+ran2 .ge. chi(0.7)) THEN 
-                        rad = rad-ran2
-                    ELSE 
-                        rad = rad+ran2
-                    ENDIF
-                ELSE 
-                    IF (rad-ran2 .lt. chi(0.43)) THEN 
-                        rad = rad+ran2
-                    ELSE 
-                        rad = rad-ran2
-                    ENDIF 
-                ENDIF
-                
-! For w_cp > 2 this weighting scheme will simply put wcp-1 galaxies in new redshift.
-! May be a better method of dealing with fiber collided triplets and quadruplets.
-                wg(Ngal+1)=float(wb)*(float(wcp)-1.0)
-                rg(1,Ngal+1)=rad*cos(dec)*cos(ra)
-                rg(2,Ngal+1)=rad*cos(dec)*sin(ra)
-                rg(3,Ngal+1)=rad*sin(dec)
-                nbg(Ngal+1)=nbar(zdis(rad),iflag)
-                wsys=wsys+wg(Ngal+1)
-                Ngal=Ngal+1
-                WRITE(*,*) chi(az), ran2, rad
-                WRITE(*,*) az,zdis(rad)
+                    ran2=-1000.0+ran2*(cpr(20000)-cpr(1))
+                    pr=cppofr(ran2)
+                    DO WHILE (pr .le. ran1)
+                        CALL RANDOM_NUMBER(ran1)
+                        CALL RANDOM_NUMBER(ran2)
+                        ran2=-1000.0+ran2*(cpr(20000)-cpr(1))
+                        pr=cppofr(ran2)
+                    ENDDO
+                    rad = rad+ran2
+                    
+                    wcp = wcp-1 
+                    wg(Ngal+1)=float(wb)!*float(wcp)
+                    rg(1,Ngal+1)=rad*cos(dec)*cos(ra)
+                    rg(2,Ngal+1)=rad*cos(dec)*sin(ra)
+                    rg(3,Ngal+1)=rad*sin(dec)
+                    nbg(Ngal+1)=nbarchi(rad)
+                    wsys=wsys+wg(Ngal+1)
+                    Ngal=Ngal+1
+!                    WRITE(*,*) chi(az), ran2, rad
+!                    WRITE(*,*) nbar(az,iflag),nbarchi(rad)
+                ENDDO 
             ELSE 
                 ra=ra*(pi/180.)
                 dec=dec*(pi/180.)
@@ -575,19 +538,14 @@ c^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       real Om0,OL0
       external chi
       az=QQ
-c      if (az.lt.zmin-0.05 .or. az.gt.0.47) then
       if (az.lt.0.0 .or. az.gt.1.5) then
          nbar=0.
       else
       call splint(z,selfun,sec,Nsel,az,self)
-c         self=2.4e-5 ! 21.8
-c         self=9.44451e-5 ! 21.2 and full?
          if (iflag.eq.0) then
             nbar=self !for clustered mock
-c             nbar=9.44451e-5
          else
             nbar=self ! for 10x random mock
-c             nbar=9.44451e-5
          endif
       endif
       RETURN
@@ -596,36 +554,24 @@ c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
       REAL function nbarchi(QQ) !nbar(comdis)
 c^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       parameter(Nsel=201)
-      real chiz(Nsel),chiselfun(Nsel),chisec(Nsel),self,ar,qq
-      common /chizinterpol/chiz,chiselfun,chisec
+      real dm(Nsel),selfunchi(Nsel),chisec(Nsel),self,ar,qq
+      common /dminterpol/dm,selfunchi,chisec
       common/radint/Om0,OL0
-      common /zbounds/zmin,zmax
       real Om0,OL0
-      external chi
       ar=QQ
-      call splint(chiz,chiselfun,chisec,Nsel,ar,self)
-      nbarchi=self !for clustered mock
-      
+      call splint(dm,selfunchi,chisec,Nsel,ar,self)
+      nbarchi=self 
       RETURN
       END
 c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-      REAL function cpnbar(QQQ) !cpnbar(z)
+      REAL function cppofr(QQQ) !cppofr(z)
 c^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      PARAMETER(Ncp=10000)
-      REAL cpr(Ncp),cpnz(Ncp),cpsec(Ncp),cpself,cpaz,QQQ
-      COMMON /cpinterpol/cpr,cpnz,cpsec
-      cpaz=QQQ
-      CALL splint(cpr,cpnz,cpsec,Ncp,cpaz,cpself)
-      cpnbar=cpself
-      RETURN
-      END
-c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-      REAL function zdis(ar) !interpolation redshift(distance)
-c^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      parameter(Nbin=151)
-      common /interp3/dbin,zbin,sec3
-      real dbin(Nbin),zbin(Nbin),sec3(Nbin)
-      call splint(dbin,zbin,sec3,Nbin,ar,zdis)
+      PARAMETER(Ncp=20000)
+      REAL cpr(Ncp),cppr(Ncp),cpsec(Ncp),cpself,cpar,QQQ
+      COMMON /cpinterpol/cpr,cppr,cpsec
+      cpar=QQQ
+      CALL splint(cpr,cppr,cpsec,Ncp,cpar,cpself)
+      cppofr=cpself
       RETURN
       END
 c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
