@@ -30,7 +30,7 @@ else
     ./FFT-fkp-mock-dr11-v7p0-wboss.exe $Rbox 1 $P0 $datadir$nbarfname $datadir$randname $FFTrandname
 fi
 
-for i in {1..10}
+for i in {11..25}
 do
     echo $i
     if [ $i -lt 10 ]

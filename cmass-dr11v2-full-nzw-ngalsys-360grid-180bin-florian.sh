@@ -4,9 +4,9 @@ name0="cmass-dr11v2-"
 nameend="-Anderson-nzw-zlim"
 ext=".dat"
 ranext=".ran.dat"
-sscale=3600.0
-Rbox=1800.0
-box="3600"
+sscale=4000.0
+Rbox=2000.0
+box="4000"
 fftext="-ngalsys-"$box"lbox-360grid.dat"
 fftranext="-ngalsys-"$box"lbox-360grid.ran.dat"
 pwrext="-florian-ngalsys-"$box"lbox-360bin-180bin.dat"
@@ -27,7 +27,7 @@ do
         FFTname=$FFTdir$FFT$name0$field$nameend$fftext
         echo $fname
         echo $FFTname
-#        ./FFT-fkp-nzw-ngalsys-360grid.exe $Rbox 0 $P0 $fname $FFTname
+        ./FFT-fkp-nzw-ngalsys-360grid.exe $Rbox 0 $P0 $fname $FFTname
 
         randfname=$datadir$name0$field$nameend$ranext
         FFTrandname=$FFTdir$FFT$name0$field$nameend$fftranext

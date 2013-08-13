@@ -1,7 +1,7 @@
       SUBROUTINE spline(x,y,n,yp1,ypn,y2)
       INTEGER n,NMAX
       REAL yp1,ypn,x(n),y(n),y2(n)
-      PARAMETER (NMAX=5000)
+      PARAMETER (NMAX=50000)
       INTEGER i,k
       REAL p,qn,sig,un,u(NMAX)
       if (yp1.gt..99e30) then
