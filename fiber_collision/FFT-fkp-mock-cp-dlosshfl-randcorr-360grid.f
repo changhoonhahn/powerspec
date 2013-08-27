@@ -3,17 +3,20 @@
       integer Ng,Nr,iflag,ic,Nbin,l,ipoly,wb,wcp,wred,flag
       integer*8 planf
       real pi,cspeed,Om0,OL0,redtru,m1,m2,zlo,zhi,garb1,garb2,garb3
-      parameter(Nsel=201,Nmax=2*10**8,Ngrid=360,Nbin=151,pi=3.141592654)
+      parameter(Nmax=2*10**8,Ngrid=360,Nbin=151,pi=3.141592654)
       parameter(Om0=0.27,OL0=0.73)
       integer grid
       dimension grid(3)
       parameter(cspeed=299800.0)
       integer, allocatable :: ig(:),ir(:)
-      real zbin(Nbin),dbin(Nbin),sec3(Nbin),zt,dum,gfrac
-      real cz,sec2(Nsel),chi,nbar,nbarchi,Rbox,wsys
+      real zbin(Nbin),dbin(Nbin),sec3(Nbin),zt,dum,gfrac,comdis
+      real cz,chi,nbar,nbarchi,Rbox,wsys
       real, allocatable :: nbg(:),nbr(:),rg(:,:),rr(:,:),wg(:),wr(:) 
-      real selfun(Nsel),z(Nsel),sec(Nsel),az,ra,dec
-      real selfunchi(Nsel),dm(Nsel),secchi(Nsel) 
+      real, allocatable :: z(:),dm(:),selfun(:),selfunchi(:)
+      real, allocatable :: sec(:),secchi(:)
+c      real selfun(Nsel),z(Nsel),sec(Nsel)
+      real az,ra,dec
+c      real selfunchi(Nsel),dm(Nsel),secchi(Nsel) 
       real alpha,P0,nb,weight,ar,akf,Fr,Fi,Gr,Gi,rad,numden
       real*8 I10,I12,I22,I13,I23,I33
       real kdotr,vol,xscale,rlow,rm(2)
@@ -26,7 +29,6 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
       character Rboxstr*200,iflagstr*200,P0str*200
       common /interpol/z,selfun,sec
       common /interpolchi/dm,selfunchi,secchi
-      common /interpol2/ra,sec2
       common /interp3/dbin,zbin,sec3
       common /Nrandom/Nran
       external nbar,chi,nbarchi,PutIntoBox,assign2,fcomb
@@ -56,14 +58,18 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
       read(P0str,*) P0
         
       WRITE(*,*) 'Ngrid=',Ngrid,'Box=',xscale,'P0=',P0
+
+      Nsel=0
+      allocate(z(Nmax),dm(Nmax),selfun(Nmax),selfunchi(Nmax))
       call getarg(4,nbarfile)
       open(unit=3,file=nbarfile,status='old',form='formatted')
-      do l=1,Nsel
-            read(3,*,end=12) zt,zlo,zhi,numden,garb1,garb2,garb3
+      do l=1,Nmax
+            read(3,*,end=12) zt,zlo,zhi,comdis,numden
             z(l)=zt
-            dm(l)=chi(zt)
+            dm(l)=comdis
             selfun(l)=numden
             selfunchi(l)=numden
+            Nsel=Nsel+1
       enddo
  12   continue
       close(3)
@@ -119,22 +125,23 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
          open(unit=4,file=randomfile,status='old',form='formatted')
          Nran=0 !Ngal will get determined later after survey is put into a box (Nr)
          do i=1,Nmax
-            read(4,*,end=15)ra,dec,az,rwb,rwcp,rwred
+            read(4,*,end=15)ra,dec,az
             ra=ra*(pi/180.)
             dec=dec*(pi/180.)
-            rad=chi(az)
+            rad=az
             wr(i)=1.0
+            Nran=Nran+1
             rr(1,i)=rad*cos(dec)*cos(ra)
             rr(2,i)=rad*cos(dec)*sin(ra)
             rr(3,i)=rad*sin(dec)
-            nbr(i)=nbar(az,iflag)
-            Nran=Nran+1
+            nbr(i)=nbarchi(az)
          enddo
  15      continue
          close(4)
       
          call PutIntoBox(Nran,rr,Rbox,ir,Nr,Nmax)
          gfrac=100. *float(Nr)/float(Nran)
+         !WRITE(*,*) 'gfrac',gfrac,'Nr',Nr,'Nran',Nran
 
          I10=0.d0
          I12=0.d0
@@ -158,7 +165,6 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
          call fftwnd_f77_one(planf,dcr,dcr)      
          call fcomb(Lm,dcr,Nr)
 
-!         write(*,*) 'Fourier file :'
          call getarg(6,filecoef)
          open(unit=4,file=filecoef,status='unknown',form='unformatted')
          write(4)(((dcr(ix,iy,iz),ix=1,Lm/2+1),iy=1,Lm),iz=1,Lm)
@@ -166,9 +172,7 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
      &   real(I33)
          write(4)P0,Nr
          close(4)
-         
       endif
-      
 
  1025 format(2x,6e14.6)
  123  stop
