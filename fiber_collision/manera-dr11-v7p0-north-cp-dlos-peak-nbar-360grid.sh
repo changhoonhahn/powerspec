@@ -47,19 +47,19 @@ for i in $(seq 1 $n); do
         fi
     fi
     if [ $datadir"nbar-"$name0$i$nameend_wboss -ot $nbarcorrfile -o $datadir"nbar-"$name0$i$nameend_upw -ot $nbarcorrfile ]; then 
-        jobcnt=(`jobs -p`)
+#        jobcnt=(`jobs -p`)
         echo $datadir"nbar-"$name0$i$nameend_wboss
         echo $datadir"nbar-"$name0$i$nameend_upw
-        if [ ${#jobcnt[@]} -lt $(( $maxjobs-4 ))  ]; then 
-            idl -e "fibcoll_nbar_comp,"$i",/noweight" &
-            idl -e "fibcoll_nbar_comp,"$i",/upweight" &
-            idl -e "fibcoll_nbar_comp,"$i",/random" &
-            idl -e "fibcoll_nbar_comp,"$i",/peaknbar,/random" &
-            wait 
-        fi
+#        if [ ${#jobcnt[@]} -lt $(( $maxjobs-4 ))  ]; then 
+        idl -e "fibcoll_nbar_comp,"$i",/noweight" &
+        idl -e "fibcoll_nbar_comp,"$i",/upweight" &
+        idl -e "fibcoll_nbar_comp,"$i",/random" &
+        idl -e "fibcoll_nbar_comp,"$i",/randpeak" &
+        wait 
+#        fi
     fi 
 done; echo $n 
-ipython -noconfirm_exit rand_combine-peak-nbar.py $n 
+#ipython -noconfirm_exit rand_combine-peak-nbar.py $n 
 
 #ipython -noconfirm_exit fibcoll_nbar_peak_correct.py $n
 

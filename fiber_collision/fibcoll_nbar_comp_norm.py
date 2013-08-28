@@ -14,12 +14,12 @@ n   = int(sys.argv[1])
 name0   = 'cmass_dr11_north_ir4'
 nameend = '.v7.0.'
 for i in range(1,n+1): 
-    fname_wboss = 'nbar-'+name0+str(i+1000)[1:4]+nameend+'wboss.txt'
-    fname_upw   = 'nbar-'+name0+str(i+1000)[1:4]+nameend+'upweight.txt'
+    fname_wboss = 'nbar-normed-'+name0+str(i+1000)[1:4]+nameend+'wboss.txt'
+    fname_upw   = 'nbar-normed-'+name0+str(i+1000)[1:4]+nameend+'upweight.txt'
     fname_shfl  = 'nbar_shuffle_zlim_'+name0+str(i+1000)[1:4]+nameend+'wghtv.txt'
-    fname_peak  = 'nbar-'+name0+str(i+1000)[1:4]+'.v7.0.peakcorr.txt'
-    fname_rand  = 'nbar-cmass_dr11_north_randoms_ir4'+str(i+1000)[1:4]+nameend+'wghtv.txt'
-    fname_randp = 'nbar-cmass_dr11_north_randoms_ir4'+str(i+1000)[1:4]+nameend+'peakcorr.txt'
+    fname_peak  = 'nbar-normed-'+name0+str(i+1000)[1:4]+'.v7.0.peakcorr.txt'
+    fname_rand  = 'nbar-normed-cmass_dr11_north_randoms_ir4'+str(i+1000)[1:4]+nameend+'wghtv.txt'
+    fname_randp = 'nbar-normed-cmass_dr11_north_randoms_ir4'+str(i+1000)[1:4]+nameend+'peakcorr.txt'
 
     data_wboss    = np.loadtxt(dir+fname_wboss)
     data_upw    = np.loadtxt(dir+fname_upw)
@@ -61,7 +61,7 @@ sum_peak_norm   = sum_peak/np.sum(sum_peak)
 sum_rand_norm   = sum_rand/np.sum(sum_rand)
 ratio_rand_peak_norm = sum_rand_norm/sum_peak_norm
 
-pthalo_fname= 'nbar-cmass-dr11may22-N-Anderson.dat'
+pthalo_fname= 'nbar-normed-cmass-dr11may22-N-Anderson.dat'
 pthalo_data = np.loadtxt(dir+pthalo_fname)
 pthalo_norm = pthalo_data[:,3]/np.sum(pthalo_data[:,3])
 ratio_upw_pthalo    = sum_upw/(pthalo_data[:,3]*n)
@@ -74,6 +74,7 @@ fig1 = py.figure(1,figsize=(8,5))
 ax10 = fig1.add_subplot(111) 
 ax10.plot(x_axis,sum_upw,'b',linewidth=2,label='Up weighted') 
 ax10.plot(x_axis,sum_wboss,'k--',linewidth=2,label='$w_{BOSS}$ only') 
+ax10.plot(x_axis,pthalo_data[:,3]*float(n),'k--',linewidth=2,label='$CMASS dr11may$') 
 ax10.scatter(x_axis,sum_peak,color='r',label='Peak')
 #ax10.scatter(x_axis,sum_shfl,color='g',label='Shuffle')
 ax10.set_xlim([0.43,0.7])
@@ -135,31 +136,7 @@ ax50.plot(x_axis,ratio_rand_wboss,'m',linewidth=2,
 ax50.plot(x_axis,ratio_randp_peak,'k--',linewidth=2,
         label='${\overline{n}(z)_{rand-peak}}/{\overline{n}(z)_{peak}}$') 
 ax50.set_xlim([0.43,0.7])
-ax50.set_ylim([0.6,0.65])
 ax50.set_xlabel('Redshift ($z$)',fontsize=14)
 ax50.set_ylabel('$\overline{n}(z)$ Ratio',fontsize=14) 
 ax50.legend(loc='best')
-
-#pthalo_nbar             = np.loadtxt(dir+'nbar-cmass-dr11may22-N-Anderson.dat')
-#pthalo_nbar_dlos_corr   = np.loadtxt(dir+'nbar-cmass-dr11may22-N-Anderson-dlosshuffle-corrected.dat')
-#
-#ratio_dloscorr = pthalo_nbar_dlos_corr[:,4]/pthalo_nbar[:,3]
-#
-#fig3 = py.figure(3,figsize=(16,5))
-#ax30 = fig3.add_subplot(121)
-#ax31 = fig3.add_subplot(122)
-#
-#ax30.plot(pthalo_nbar[:,0],pthalo_nbar[:,3],'k',linewidth=2,label='PTHalo $\overline{n}(z)$')
-#ax30.scatter(pthalo_nbar_dlos_corr[:,0],pthalo_nbar_dlos_corr[:,4],color='b',label='PTHalo $\overline{n}(z)$ $d_{LOS}$ Corrected')
-#ax30.set_xlim([0.43,0.7])
-#ax30.set_xlabel('Redshift ($z$)',fontsize=14)
-#ax30.set_ylabel('$\overline{n}(z)$',fontsize=14) 
-#ax30.legend(loc='best')
-#
-#ax31.plot(pthalo_nbar[:,0],ratio_dloscorr,'k',linewidth=2,label='${\overline{n}(z)_{\rm{PTHalo-corr}}}/{\overline{n}(z)_{\rm{PTHalo}}}$')
-#ax31.set_xlim([0.43,0.7])
-#ax31.set_ylim([0.8,1.2])
-#ax31.set_xlabel('Redshift ($z$)',fontsize=14)
-#ax31.set_ylabel('$\overline{n}(z)$ Ratio',fontsize=14) 
-#ax31.legend(loc='best')
 py.show()

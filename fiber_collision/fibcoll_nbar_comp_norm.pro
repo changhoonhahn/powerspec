@@ -1,5 +1,5 @@
-pro fibcoll_nbar_comp,n,noweight=noweight,upweight=upweight,shuffle=shuffle,random=random,peaknbar=peaknbar,$
-    randpeak=randpeak
+pro fibcoll_nbar_comp_norm,n,noweight=noweight,upweight=upweight,shuffle=shuffle,random=random,peaknbar=peaknbar,$
+    randpeak=randpeak,cmass=cmass
     datadir = '/mount/riachuelo1/hahn/data/manera_mock/dr11/'
     om0=0.27 
     ol0=0.73 
@@ -23,6 +23,16 @@ pro fibcoll_nbar_comp,n,noweight=noweight,upweight=upweight,shuffle=shuffle,rand
         comdis_high[i]  = 3000.0*comdis(z_high_bound[i],om0,ol0) 
     endfor 
     
+    if keyword_set(cmass) then begin 
+        total_gals = total(gal_tot)
+        print, total_gals
+        for i=0L,200L do begin
+            zlim_nbar[i] = nbarz[i]*zlim_comvol[i]/total_gals
+        endfor 
+        print, zlim_nbar
+        out_fname = 'nbar-normed-cmass-dr11may22-N-Anderson.dat'
+    endif 
+    
     if keyword_set(noweight) then begin 
         data_fname = 'cmass_dr11_north_ir4'+strmid(strtrim(string(n+1000),1),1)+'.v7.0.wghtv.txt'
         print,datadir+data_fname
@@ -42,10 +52,10 @@ pro fibcoll_nbar_comp,n,noweight=noweight,upweight=upweight,shuffle=shuffle,rand
         for i=0L,200L do begin 
            zlim = where(az ge z_low_bound[i] and az lt z_high_bound[i],count_zlim)
            zlim_count = 0.0
-           if count_zlim NE 0 then zlim_count = (total(weights[where(zlim)])/weights_max)*total_gals
-           zlim_nbar[i] = zlim_count/zlim_comvol[i] 
+           if count_zlim NE 0 then zlim_count = (total(weights[where(zlim)])/weights_max);*total_gals
+           zlim_nbar[i] = zlim_count;/zlim_comvol[i] 
         endfor
-        out_fname = 'nbar-'+'cmass_dr11_north_ir4'+strmid(strtrim(string(n+1000),1),1)+'.v7.0.wboss.txt'
+        out_fname = 'nbar-normed-'+'cmass_dr11_north_ir4'+strmid(strtrim(string(n+1000),1),1)+'.v7.0.wboss.txt'
     endif 
 
     if keyword_set(upweight) then begin 
@@ -74,10 +84,10 @@ pro fibcoll_nbar_comp,n,noweight=noweight,upweight=upweight,shuffle=shuffle,rand
         for i=0L,200L do begin 
            zlim = where(az ge z_low_bound[i] and az lt z_high_bound[i],count_zlim)
            zlim_count = 0.0
-           if count_zlim NE 0 then zlim_count = (total(weights[where(zlim)])/weights_max)*total_gals
-           zlim_nbar[i] = zlim_count/zlim_comvol[i] 
+           if count_zlim NE 0 then zlim_count = (total(weights[where(zlim)])/weights_max);*total_gals
+           zlim_nbar[i] = zlim_count;/zlim_comvol[i] 
         endfor
-        out_fname = 'nbar-'+'cmass_dr11_north_ir4'+strmid(strtrim(string(n+1000),1),1)+'.v7.0.upweight.txt'
+        out_fname = 'nbar-normed-'+'cmass_dr11_north_ir4'+strmid(strtrim(string(n+1000),1),1)+'.v7.0.upweight.txt'
     endif 
 
     if keyword_set(shuffle) then begin
@@ -102,10 +112,10 @@ pro fibcoll_nbar_comp,n,noweight=noweight,upweight=upweight,shuffle=shuffle,rand
         for i=0L,200L do begin 
            zlim = where(dc ge comdis_low[i] and dc lt comdis_high[i],count_zlim)
            zlim_count = 0.0
-           if count_zlim ne 0 then zlim_count = (total(weights[where(zlim)])/weights_max)*total_gals
-           zlim_nbar[i] = zlim_count/zlim_comvol[i] 
+           if count_zlim ne 0 then zlim_count = (total(weights[where(zlim)])/weights_max);*total_gals
+           zlim_nbar[i] = zlim_count;/zlim_comvol[i] 
         endfor
-        out_fname = 'nbar-'+data_fname
+        out_fname = 'nbar-normed-'+data_fname
     endif 
     
     if keyword_set(peaknbar) then begin
@@ -134,10 +144,10 @@ pro fibcoll_nbar_comp,n,noweight=noweight,upweight=upweight,shuffle=shuffle,rand
         for i=0L,200L do begin 
            zlim = where(az ge z_low_bound[i] and az lt z_high_bound[i],count_zlim)
            zlim_count = 0.0
-           if count_zlim GT 0.0 then zlim_count = (total(weights[where(zlim)])/weights_max)*total_gals
-           zlim_nbar[i] = zlim_count/zlim_comvol[i] 
+           if count_zlim GT 0.0 then zlim_count = (total(weights[where(zlim)])/weights_max);*total_gals
+           zlim_nbar[i] = zlim_count;/zlim_comvol[i] 
         endfor  
-        out_fname = 'nbar-'+data_fname
+        out_fname = 'nbar-normed-'+data_fname
     endif 
     
     if keyword_set(random) then begin
@@ -167,10 +177,10 @@ pro fibcoll_nbar_comp,n,noweight=noweight,upweight=upweight,shuffle=shuffle,rand
         for i=0L,200L do begin 
            zlim = where(az ge z_low_bound[i] and az lt z_high_bound[i],count_zlim)
            zlim_count = 0.0
-           if count_zlim GT 0.0 then zlim_count = (total(weights[where(zlim)])/weights_max)*total_gals
-           zlim_nbar[i] = zlim_count/zlim_comvol[i] 
+           if count_zlim GT 0.0 then zlim_count = (total(weights[where(zlim)])/weights_max);*total_gals
+           zlim_nbar[i] = zlim_count;/zlim_comvol[i] 
         endfor
-        out_fname = 'nbar-'+data_fname
+        out_fname = 'nbar-normed-'+data_fname
     endif 
     if keyword_set(randpeak) then begin
         data_fname='cmass_dr11_north_randoms_ir4'+strmid(strtrim(string(n+1000),1),1)+$
@@ -199,10 +209,10 @@ pro fibcoll_nbar_comp,n,noweight=noweight,upweight=upweight,shuffle=shuffle,rand
         for i=0L,200L do begin 
            zlim = where(az ge z_low_bound[i] and az lt z_high_bound[i],count_zlim)
            zlim_count = 0.0
-           if count_zlim GT 0.0 then zlim_count = (total(weights[where(zlim)])/weights_max)*total_gals
-           zlim_nbar[i] = zlim_count/zlim_comvol[i] 
+           if count_zlim GT 0.0 then zlim_count = (total(weights[where(zlim)])/weights_max);*total_gals
+           zlim_nbar[i] = zlim_count;/zlim_comvol[i] 
         endfor
-        out_fname = 'nbar-'+data_fname
+        out_fname = 'nbar-normed-'+data_fname
     endif 
 
     openw,lun,datadir+out_fname,/get_lun 

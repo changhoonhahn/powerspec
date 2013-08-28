@@ -3,7 +3,7 @@
       integer Ngal,Nmax
       integer Nnz,Ntail,wNgal
       integer Ng,l,ipoly,wb,wcp,wred,flag
-      real pi,cspeed,Om0,OL0,redtru,m1,m2
+      real pi,cspeed,Om0,OL0,redtru,m1,m2,veto
       REAL zt,zlo,zhi,garb1,garb2,garb3
       real cpz,cpnbarz
       REAL sigma,peakfrac
@@ -15,6 +15,7 @@
       real, allocatable :: wg(:),wr(:)
       REAL, ALLOCATABLE :: out_ra(:),out_dec(:),out_az(:)
       REAL, ALLOCATABLE :: out_wboss(:),out_wred(:),out_wcp(:)
+      real, allocatable :: out_veto(:)
       real, allocatable :: wwg(:)
       REAL, ALLOCATABLE :: z(:),dm(:),dmsec(:)
       REAL, ALLOCATABLE :: tailz(:),tailnbarz(:),tailsec(:)
@@ -57,6 +58,7 @@
       allocate(wg(Nmax),wwg(Nmax))
       allocate(out_ra(Nmax),out_dec(Nmax),out_az(Nmax))
       allocate(out_wboss(Nmax),out_wred(Nmax),out_wcp(Nmax))
+      allocate(out_veto(Nmax))
       open(unit=4,file=lssfile,status='old',form='formatted')
 
       Ngal=0 
@@ -66,7 +68,7 @@
       CALL RANDOM_SEED
       DO i=1,Nmax
         READ(4,*,END=13)ra,dec,az,ipoly,wb,wcp,wred,redtru,flag,m1
-     &      ,m2
+     &      ,m2,veto
             IF (wb.gt.0 .and. wcp.gt.0 .and. wred.gt.0) THEN
                 wwg(i)=float(wb)*(float(wcp)+float(wred)-1.0)
             ELSE
@@ -82,6 +84,7 @@
                 out_wboss(Ngal+1)=wb
                 out_wred(Ngal+1)=wred
                 out_wcp(Ngal+1)=wcp
+                out_veto(Ngal+1)=veto
                 rad=chi(az)
                 wg(Ngal+1)=float(wb)*(float(wcp)+float(wred)-1.0)
                 wsys=wsys+wg(Ngal+1)
@@ -93,6 +96,7 @@
                 out_wboss(Ngal+1)=wb
                 out_wred(Ngal+1)=wred
                 out_wcp(Ngal+1)=1.0
+                out_veto(Ngal+1)=veto
                 rad=chi(az)
                 wg(Ngal+1)=float(wb)*float(wred)
                 wsys=wsys+wg(Ngal+1)
@@ -122,6 +126,7 @@
                         out_wboss(Ngal+1)=wb
                         out_wred(Ngal+1)=1.0
                         out_wcp(Ngal+1)=1.0
+                        out_veto(Ngal+1)=veto
                         Ngal=Ngal+1
                     ELSE
                         ran2=0.43+ran2*0.27
@@ -143,6 +148,7 @@
                         out_wboss(Ngal+1)=wb
                         out_wred(Ngal+1)=1.0
                         out_wcp(Ngal+1)=1.0
+                        out_veto(Ngal+1)=veto
                         Ngal=Ngal+1
                     ENDIF 
                 ENDDO 
@@ -153,6 +159,7 @@
                 out_wboss(Ngal+1)=wb
                 out_wred(Ngal+1)=wred
                 out_wcp(Ngal+1)=wcp
+                out_veto(Ngal+1)=veto
                 wg(Ngal+1)=0.0
                 wsys=wsys+wg(Ngal+1)
                 Ngal=Ngal+1
@@ -169,8 +176,9 @@
          
          OPEN(unit=8,file=outputfile,status='unknown',form='formatted') 
          DO i=1,Ngal
-             WRITE(8,'(6(E,2x))') out_ra(i),out_dec(i),
-     &          out_az(i),out_wboss(i),out_wred(i),out_wcp(i)
+             WRITE(8,'(7(E,2x))') out_ra(i),out_dec(i),
+     &          out_az(i),out_wboss(i),out_wred(i),out_wcp(i),
+     &          out_veto(i)
          ENDDO 
          CLOSE(8)
       end

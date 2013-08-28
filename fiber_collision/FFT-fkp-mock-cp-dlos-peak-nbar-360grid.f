@@ -3,6 +3,7 @@
       integer Nran,iwr,Ngal,Nmax,kx,ky,kz,Lm,Ngrid,ix,iy,iz
       integer Nnz,Ntail,wNgal
       integer Ng,Nr,iflag,ic,Nbin,l,ipoly,wb,wcp,wred,flag
+      integer veto
       integer*8 planf
       real pi,cspeed,Om0,OL0,redtru,m1,m2
       REAL zt,zlo,zhi,garb1,garb2,garb3
@@ -23,7 +24,7 @@
       REAL, ALLOCATABLE :: z(:),selfun(:),sec(:)
       REAL, ALLOCATABLE :: dm(:),selfunchi(:),secchi(:)
       REAL, ALLOCATABLE :: tailz(:),tailnbarz(:),tailsec(:)
-      REAL az,ra,dec,rad,numden
+      REAL az,ra,dec,rad,numden,wghtr
       REAL dlosrt,dlosprt
       real alpha,P0,nb,weight,ar,akf,Fr,Fi,Gr,Gi
       real*8 I10,I12,I22,I13,I23,I33
@@ -106,8 +107,9 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
          CALL RANDOM_SEED
          DO i=1,Nmax
             READ(4,*,END=13)ra,dec,az,ipoly,wb,wcp,wred,redtru,flag,m1
-     &      ,m2
-            IF (wb.gt.0 .and. wcp.gt.0 .and. wred.gt.0) THEN
+     &      ,m2,veto
+            IF (wb.gt.0 .and. wcp.gt.0 .and. wred.gt.0 .and. veto.gt.0)
+     &      THEN
                 wwg(i)=float(wb)*(float(wcp)+float(wred)-1.0)
             ELSE
                 wwg(i)=0.0
@@ -117,7 +119,8 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
 
             ra=ra*(pi/180.)
             dec=dec*(pi/180.)
-            IF (wcp.eq.1 .and. wb.gt.0 .and. wred.gt.0) THEN 
+            IF (wcp.eq.1 .and. wb.gt.0 .and. wred.gt.0 .and. veto.gt.0) 
+     &      THEN 
                 rad=chi(az)
                 wg(Ngal+1)=float(wb)*(float(wcp)+float(wred)-1.0)
                 rg(1,Ngal+1)=rad*cos(dec)*cos(ra)
@@ -126,7 +129,8 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
                 nbg(Ngal+1)=nbar(az,Nnz,z,selfun,sec)
                 wsys=wsys+wg(Ngal+1)
                 Ngal=Ngal+1
-            ELSEIF (wcp.gt.1 .and. wb.gt.0 .and. wred.gt.0) THEN
+            ELSEIF (wcp.gt.1 .and. wb.gt.0 .and. wred.gt.0 .and. 
+     &      veto.gt.0) THEN
                 rad=chi(az)
                 wg(Ngal+1)=float(wb)*float(wred)
                 rg(1,Ngal+1)=rad*cos(dec)*cos(ra)
@@ -226,11 +230,11 @@ c                        WRITE(*,*) ran2,pz,rad,nbg(Ngal),wg(Ngal)
          open(unit=4,file=randomfile,status='old',form='formatted')
          Nran=0 
          do i=1,Nmax
-            read(4,*,end=15)ra,dec,az
+            read(4,*,end=15)ra,dec,az,wghtr
             ra=ra*(pi/180.)
             dec=dec*(pi/180.)
             rad=chi(az)
-            wr(i)=1.0
+            wr(i)=wghtr
             Nran=Nran+1
             rr(1,i)=rad*cos(dec)*cos(ra)
             rr(2,i)=rad*cos(dec)*sin(ra)
