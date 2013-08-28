@@ -29,7 +29,7 @@ pro fibcoll_nbar_comp_norm,n,noweight=noweight,upweight=upweight,shuffle=shuffle
         for i=0L,200L do begin
             zlim_nbar[i] = nbarz[i]*zlim_comvol[i]/total_gals
         endfor 
-        print, zlim_nbar
+        zlim_nbar = zlim_nbar/total(zlim_nbar[where(z_mid_bound gt 0.43 and z_mid_bound lt 0.7)])
         out_fname = 'nbar-normed-cmass-dr11may22-N-Anderson.dat'
     endif 
     
