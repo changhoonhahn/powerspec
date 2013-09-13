@@ -1,0 +1,77 @@
+\documentclass[letterpaper]{article}
+\usepackage{times}
+\usepackage{amsmath}
+\usepackage{fullpage}
+
+\begin{document}
+\title{$\overline{n(z)}$ for CMASS and PTHalo}
+\section{CMASS $\rm{DR11}_{\rm{may}}$}
+\begin{equation}
+\bar{n}(z) = \left(\frac{\sum\limits_{i \in z_{bin}} w_{\rm{sys},i}(w_{\rm{cp},i} + w_{\rm{noz},i} - 1.0) }{\sum\limits_{i \in \rm{all}} w_{\rm{sys},i}(w_{\rm{cp},i} + w_{\rm{noz},i} - 1.0) } \right) \left(\sum\limits_{i \in \rm{all}} w_{\rm{cp},i} + w_{\rm{noz},i}-1.0 \right) \frac{1}{V_{\rm{comov}}}
+\end{equation}
+
+\begin{equation}
+\bar{n}(z)_{\rm{norm}} = \left(\frac{\sum\limits_{i \in z_{bin}} w_{\rm{sys},i}(w_{\rm{cp},i} + w_{\rm{noz},i} - 1.0) }{\sum\limits_{i \in \rm{all}} w_{\rm{sys},i}(w_{\rm{cp},i} + w_{\rm{noz},i} - 1.0) } \right) 
+\end{equation}
+
+\section{PTHalo $w_{\rm{BOSS}}$ only}
+\begin{equation}
+\bar{n}(z) = \left(\frac{\sum\limits_{i \in z_{bin}} w_{\rm{BOSS},i} }{\sum\limits_{i \in \rm{all}} w_{\rm{BOSS},i} } \right) \left(\sum\limits_{i \in \rm{all}} w_{\rm{cp},i} + w_{\rm{red},i}-1.0 \right) \frac{1}{V_{\rm{comov}}}
+\end{equation}
+
+\begin{equation}
+\bar{n}(z)_{\rm{norm}} = \left(\frac{\sum\limits_{i \in z_{bin}} w_{\rm{BOSS},i} }{\sum\limits_{i \in \rm{all}} w_{\rm{BOSS},i} } \right)
+\end{equation}
+
+\section{PTHalo up-weighted}
+\begin{equation}
+w_{\rm{PTHalo},i} = \begin{cases}
+    w_{\rm{BOSS},i}(w_{\rm{cp},i} + w_{\rm{red},i} - 1.0), & \text{if $w_{\rm{BOSS},i},w_{\rm{cp},i}$, and $w_{\rm{red},i} > 0$.} \\
+    0, & \text{else.} 
+    \end{cases}
+\end{equation}
+
+\begin{equation}
+\bar{n}(z) = \left(\frac{\sum\limits_{i \in z_{bin}} w_{\rm{PTHalo},i} }{\sum\limits_{i \in \rm{all}} w_{\rm{PTHalo},i} } \right) \left(\sum\limits_{i \in \rm{all}} w_{\rm{cp},i} + w_{\rm{red},i}-1.0 \right) \frac{1}{V_{\rm{comov}}}
+\end{equation}
+
+\begin{equation}
+\bar{n}(z)_{\rm{norm}} = \left(\frac{\sum\limits_{i \in z_{bin}} w_{\rm{PTHalo},i} }{\sum\limits_{i \in \rm{all}} w_{\rm{PTHalo},i} } \right)
+\end{equation}
+
+\section{PTHalo Peak$+\bar{n}(z)$ Corrected}
+\noindent Same weighting scheme as PTHalo up-weighted except the weights ($w_{\rm{BOSS},i}, w_{\rm{cp},1}, \text{and} w_{\rm{red},i}$) are derived from the Peak$+\bar{n}(z)$ corrected PTHalo mock catalogs. 
+\begin{equation}
+\bar{n}(z) = \left(\frac{\sum\limits_{i \in z_{bin}} w_{\rm{PTHalo},i} }{\sum\limits_{i \in \rm{all}} w_{\rm{PTHalo},i} } \right) \left(\sum\limits_{i \in \rm{all}} w_{\rm{cp},i} + w_{\rm{red},i}-1.0 \right) \frac{1}{V_{\rm{comov}}}
+\end{equation}
+
+\begin{equation}
+\bar{n}(z)_{\rm{norm}} = \left(\frac{\sum\limits_{i \in z_{bin}} w_{\rm{PTHalo},i} }{\sum\limits_{i \in \rm{all}} w_{\rm{PTHalo},i} } \right)
+\end{equation}
+
+\section{PTHalo Random Un-corrected}
+\begin{equation}
+w_{\rm{rand},i} = \begin{cases}
+    1, & \text{if $w_{\rm{BOSS},i},w_{\rm{cp},i}$, and $w_{\rm{red},i} > 0$.} \\
+    w_{\rm{cp},i} + w_{\rm{red},i} - 1.0, & \text{else.} 
+    \end{cases}
+\end{equation}
+
+\begin{equation}
+\bar{n}(z) = \left(\frac{\sum\limits_{i \in z_{bin}} w_{\rm{rand},i} }{\sum\limits_{i \in \rm{all}} w_{\rm{rand},i} } \right) \left(\sum\limits_{i \in \rm{all}} w_{\rm{cp},i} + w_{\rm{red},i}-1.0 \right) \frac{1}{V_{\rm{comov}}}
+\end{equation}
+
+\begin{equation}
+\bar{n}(z)_{\rm{norm}} = \left(\frac{\sum\limits_{i \in z_{bin}} w_{\rm{rand},i} }{\sum\limits_{i \in \rm{all}} w_{\rm{rand},i} } \right)
+\end{equation}
+
+\section{PTHalo Random Peak$+\bar{n}(z)$ Corrected}
+\noindent Same weighting scheme as PTHalo Random Un-corrected except the weights ($w_{\rm{BOSS},i}, w_{\rm{cp},1}, \text{and} w_{\rm{red},i}$) are derived from the Peak$+\bar{n}(z)$ corrected PTHalo random catalogs, which were generated from Peak$+\bar{n}(z)$ Corrected PTHalo mocks.
+\begin{equation}
+\bar{n}(z) = \left(\frac{\sum\limits_{i \in z_{bin}} w_{\rm{rand},i} }{\sum\limits_{i \in \rm{all}} w_{\rm{rand},i} } \right) \left(\sum\limits_{i \in \rm{all}} w_{\rm{cp},i} + w_{\rm{red},i}-1 \right) \frac{1}{V_{\rm{comov}}}
+\end{equation}
+
+\begin{equation}
+\bar{n}(z)_{\rm{norm}} = \left(\frac{\sum\limits_{i \in z_{bin}} w_{\rm{rand},i} }{\sum\limits_{i \in \rm{all}} w_{\rm{rand},i} } \right)
+\end{equation}
+\end{document}
