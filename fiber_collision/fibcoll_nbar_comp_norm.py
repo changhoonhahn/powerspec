@@ -61,8 +61,10 @@ fig1 = py.figure(1,figsize=(8,5))
 ax10 = fig1.add_subplot(111) 
 ax10.plot(x_axis,sum_upw,'b',linewidth=2,label='Up weighted') 
 ax10.plot(x_axis,sum_wboss,'m--',linewidth=2,label='$w_{BOSS}$ only') 
-ax10.scatter(x_axis,pthalo_data[:,3]*float(n),color='k',label='$CMASS dr11may$') 
+ax10.scatter(x_axis,pthalo_data[:,3]*float(n),color='k',label='CMASS$_{dr11may}$') 
 ax10.scatter(x_axis,sum_peak,color='r',label='Peak')
+ax10.scatter(x_axis,sum_rand,color='y',label='PTHalo Random')
+ax10.scatter(x_axis,sum_randp,color='g',label='PTHalo Peak Corr Random')
 ax10.set_xlim([0.43,0.7])
 ax10.set_xlabel('Redshift ($z$)',fontsize=14) 
 ax10.set_ylabel('$\overline{n}(z)$',fontsize=14)
@@ -84,24 +86,26 @@ ax20.set_ylim([0.95,1.05])
 ax20.set_xlabel('Redshift ($z$)',fontsize=14)
 ax20.set_ylabel('$\overline{n}(z)$ Ratio',fontsize=14) 
 ax20.legend(loc='best')
+ax20.grid()
 
-fig3 = py.figure(3,figsize=(8,5))
+fig3 = py.figure(3,figsize=(16,10))
 ax30 = fig3.add_subplot(111)
 #ax30.plot(x_axis,ratio_upw_pthalo,'b',linewidth=2,
 #        label='${\overline{n}(z)_{upweight}}/{\overline{n}(z)_{CMASS-dr11may}}$') 
-ax30.plot(x_axis,ratio_wboss_pthalo,'k--',linewidth=2,
+ax30.plot(x_axis,ratio_wboss_pthalo,'b--',linewidth=2,
         label='${\overline{n}(z)_{w_{BOSS}-only}}/{\overline{n}(z)_{CMASS-dr11may}}$') 
-ax30.plot(x_axis,ratio_peak_pthalo,'m--',linewidth=2,
+ax30.plot(x_axis,ratio_peak_pthalo,'r--',linewidth=2,
         label='${\overline{n}(z)_{peak}}/{\overline{n}(z)_{CMASS-dr11may}}$') 
 ax30.scatter(x_axis,ratio_rand_pthalo,color='k',
         label='${\overline{n}(z)_{rand}}/{\overline{n}(z)_{CMASS-dr11may}}$') 
 ax30.scatter(x_axis,ratio_randp_pthalo,color='m',
         label='${\overline{n}(z)_{rand-peak}}/{\overline{n}(z)_{CMASS-dr11may}}$') 
 ax30.set_xlim([0.43,0.7])
-ax30.set_ylim([0.8,1.2])
+ax30.set_ylim([0.9,1.2])
 ax30.set_xlabel('Redshift ($z$)',fontsize=14)
 ax30.set_ylabel('$\overline{n}(z)$ Ratio',fontsize=14) 
 ax30.legend(loc='best')
+ax30.grid()
 
 fig4 = py.figure(4,figsize=(8,5))
 ax40 = fig4.add_subplot(111)
@@ -119,12 +123,12 @@ fig5 = py.figure(5,figsize=(8,5))
 ax50 = fig5.add_subplot(111)
 ax50.plot(x_axis,ratio_rand_upw,'b',linewidth=2,
         label='${\overline{n}(z)_{rand}}/{\overline{n}(z)_{upweighted}}$') 
-ax50.plot(x_axis,ratio_rand_wboss,'m',linewidth=2,
+ax50.plot(x_axis,ratio_rand_wboss,'b--',linewidth=2,
         label='${\overline{n}(z)_{rand}}/{\overline{n}(z)_{w_{BOSS}}}$') 
 ax50.plot(x_axis,ratio_randp_peak,'k--',linewidth=2,
         label='${\overline{n}(z)_{rand-peak}}/{\overline{n}(z)_{peak}}$') 
 ax50.set_xlim([0.43,0.7])
-ax50.set_ylim([0.98,1.05])
+ax50.set_ylim([0.95,1.05])
 ax50.set_xlabel('Redshift ($z$)',fontsize=14)
 ax50.set_ylabel('$\overline{n}(z)$ Ratio',fontsize=14) 
 ax50.legend(loc='best')

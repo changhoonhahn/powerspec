@@ -18,7 +18,7 @@ idl -e ".r fibcoll_make_rand_peak_nbar.pro"
 idl -e ".r fibcoll_nbar_comp.pro"
 ifort -O3 -o FFT-fkp-mock-cp-dlos-peak-nbar-360grid.exe FFT-fkp-mock-cp-dlos-peak-nbar-360grid.f -L/usr/local/fftw_intel_s/lib -lsfftw -lsfftw
 ifort -O3 -o mock-cp-dlos-peak-nbar.exe mock-cp-dlos-peak-nbar.f
-ifort -O3 -o power-fkp-mock-wboss-360grid-180bin.exe power-fkp-mock-wboss-360grid-180bin.f
+ifort -O3 -o power-fkp-mock-weightr-360grid-180bin.exe power-fkp-mock-weightr-360grid-180bin.f
 
 for i in $(seq 1 $n); do
     i=$( printf '%03d' $i ) 
@@ -26,7 +26,7 @@ for i in $(seq 1 $n); do
     fname=$datadir$name0$i$nameend
     corrfile=$datadir$name0$i$nameend_peak
     corrrandfile=$datadir$namerand0$i$nameend_peak
-    nbarcorrfile=$datadir"nbar-"$name0$i$nameend_peak
+    nbarcorrfile=$datadir"nbar-normed-"$name0$i$nameend_peak
     
     if [[ -a $corrfile ]] && [[ -a $corrrandfile ]] && [[ -a $nbarcorrfile ]]; then
         echo $corrfile 
@@ -42,36 +42,38 @@ for i in $(seq 1 $n); do
             echo $corrrandfile
         fi 
         if [[ ! -a $nbarcorrfile ]]; then
-            idl -e "fibcoll_nbar_comp,"$i",/peaknbar" 
+            idl -e "fibcoll_nbar_comp_norm,"$i",/peaknbar" 
             echo $nbarcorrfile
         fi
     fi
-    if [ $datadir"nbar-"$name0$i$nameend_wboss -ot $nbarcorrfile -o $datadir"nbar-"$name0$i$nameend_upw -ot $nbarcorrfile ]; then 
+    if [ $datadir"nbar-normed-"$name0$i$nameend_wboss -ot $nbarcorrfile -o $datadir"nbar-normed-"$name0$i$nameend_upw -ot $nbarcorrfile ]; then 
 #        jobcnt=(`jobs -p`)
-        echo $datadir"nbar-"$name0$i$nameend_wboss
-        echo $datadir"nbar-"$name0$i$nameend_upw
+        echo $datadir"nbar-normed-"$name0$i$nameend_wboss
+        echo $datadir"nbar-normed-"$name0$i$nameend_upw
 #        if [ ${#jobcnt[@]} -lt $(( $maxjobs-4 ))  ]; then 
-        idl -e "fibcoll_nbar_comp,"$i",/noweight" &
-        idl -e "fibcoll_nbar_comp,"$i",/upweight" &
-        idl -e "fibcoll_nbar_comp,"$i",/random" &
-        idl -e "fibcoll_nbar_comp,"$i",/randpeak" &
+        idl -e "fibcoll_nbar_comp_norm,"$i",/noweight" &
+        idl -e "fibcoll_nbar_comp_norm,"$i",/upweight" &
+        idl -e "fibcoll_nbar_comp_norm,"$i",/random" &
+        idl -e "fibcoll_nbar_comp_norm,"$i",/randpeak" &
         wait 
 #        fi
     fi 
 done; echo $n 
-#ipython -noconfirm_exit rand_combine-peak-nbar.py $n 
 
-#ipython -noconfirm_exit fibcoll_nbar_peak_correct.py $n
+ipython -noconfirm_exit rand_combine-peak-nbar.py $n 
 
-corrnbarfname="nbar-cmass-dr11may22-N-Anderson-peaknbar-corrected.dat"
-randname="cmass_dr11_north_"$n"_randoms_ir4_peak_nbar_corr_combined_wboss.v7.0.wghtv.txt"
+ipython -noconfirm_exit fibcoll_nbar_peak_correct.py $n
+
+corrnbarfname="nbar-cmass-dr11may22-N-Anderson.peaknbarcorr.dat"
+randname="cmass_dr11_north_"$n"_randoms_ir4_combined_wghtr.v7.0.peakcorr.txt"
 FFTrandname=$FFTdir$FFT$randname".grid"$grid".P0"$P0".box"$box
-#if [ -a $FFTrandname ]; then
-#    echo $FFTrandname
-#else
-#    ./FFT-fkp-mock-cp-dlos-peak-nbar-360grid.exe $Rbox 1 $P0 $datadir$corrnbarfname $datadir$tailnbarfname $randname $FFTrandname
-#    echo $FFTrandname
-#fi
+#FFTrandname=$FFTdir"FFTcmass_dr11_north_randoms_ir4_combined_wboss.v7.0.wghtv.txt.grid360.P020000.box3600"
+if [ -a $FFTrandname ]; then
+    echo $FFTrandname
+else
+    ./FFT-fkp-mock-cp-dlos-peak-nbar-360grid.exe $Rbox 1 $P0 $datadir$corrnbarfname $datadir$tailnbarfname $datadir$randname $FFTrandname
+    echo $FFTrandname
+fi
 
 for i in $(seq 1 $n); do 
     i=$( printf '%03d' $i ) 
@@ -80,8 +82,8 @@ for i in $(seq 1 $n); do
     FFTname=$FFTdir$FFT$name0$i$nameend"-cp-dlos-peak-nbar.grid"$grid".P0"$P0".box"$box
     powername=$powerdir$power$name0$i$nameend"-cp-dlos-peak-nbar.grid"$grid".P0"$P0".box"$box
      
-#    ./FFT-fkp-mock-cp-dlos-peak-nbar-360grid.exe $Rbox 0 $P0 $datadir$nbarfname $datadir$tailnbarfname $fname $FFTname
-#    echo $FFTname
-#    ./power-fkp-mock-wboss-360grid-180bin.exe $FFTname $FFTrandname $powername $sscale
-#    echo $powername
+    ./FFT-fkp-mock-cp-dlos-peak-nbar-360grid.exe $Rbox 0 $P0 $datadir$corrnbarfname $datadir$tailnbarfname $fname $FFTname
+    echo $FFTname
+    ./power-fkp-mock-weightr-360grid-180bin.exe $FFTname $FFTrandname $powername $sscale
+    echo $powername
 done

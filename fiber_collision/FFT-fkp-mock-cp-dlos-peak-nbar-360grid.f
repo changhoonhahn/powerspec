@@ -18,7 +18,7 @@
       integer, allocatable :: ig(:),ir(:)
       real dum,gfrac
       real peakrt,peakprt,pr
-      real Rbox,wsys,wwsys
+      real Rbox,wsys,wwsys,wsysr
       real, allocatable :: nbg(:),nbr(:),rg(:,:),rr(:,:),wg(:),wr(:)
       real, allocatable :: wwg(:)
       REAL, ALLOCATABLE :: z(:),selfun(:),sec(:)
@@ -197,7 +197,7 @@ c                        WRITE(*,*) ran2,pz,rad,nbg(Ngal),wg(Ngal)
                 rg(1,Ngal+1)=rad*cos(dec)*cos(ra)
                 rg(2,Ngal+1)=rad*cos(dec)*sin(ra)
                 rg(3,Ngal+1)=rad*sin(dec)
-                nbg(Ngal+1)=nbar(az,Nnz,dm,selfun,sec)
+                nbg(Ngal+1)=nbar(az,Nnz,z,selfun,sec)
                 wsys=wsys+wg(Ngal+1)
                 Ngal=Ngal+1
             ENDIF
@@ -229,17 +229,19 @@ c                        WRITE(*,*) ran2,pz,rad,nbg(Ngal),wg(Ngal)
          allocate(rr(3,Nmax),nbr(Nmax),ir(Nmax),wr(Nmax))
          open(unit=4,file=randomfile,status='old',form='formatted')
          Nran=0 
+         wsysr=0.0
          do i=1,Nmax
             read(4,*,end=15)ra,dec,az,wghtr
             ra=ra*(pi/180.)
             dec=dec*(pi/180.)
             rad=chi(az)
             wr(i)=wghtr
+            wsysr=wsysr+wghtr
             Nran=Nran+1
             rr(1,i)=rad*cos(dec)*cos(ra)
             rr(2,i)=rad*cos(dec)*sin(ra)
             rr(3,i)=rad*sin(dec)
-            nbr(i)=nbar(az,Nnz,dm,selfun,sec)
+            nbr(i)=nbar(az,Nnz,z,selfun,sec)
          enddo
  15      continue
          close(4)
@@ -274,7 +276,7 @@ c                        WRITE(*,*) ran2,pz,rad,nbg(Ngal),wg(Ngal)
          write(6)(((dcr(ix,iy,iz),ix=1,Lm/2+1),iy=1,Lm),iz=1,Lm)
          write(6)real(I10),real(I12),real(I22),real(I13),real(I23),
      &   real(I33)
-         write(6)P0,Nr
+         write(6)P0,Nr,wsysr
          close(6)
       endif
       end
@@ -541,7 +543,7 @@ c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
       REAL function nbar(QQ,N,z,selfun,sec) !nbar(z)
 c^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       INTEGER N
-      real z(N),selfun(N),sec(N),self,az,qq
+      real z(N),selfun(N),sec(N),self,az,QQ
       az=QQ
       if (az.lt.0.0 .or. az.gt.1.5) then
          nbar=0.0

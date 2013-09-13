@@ -14,5 +14,5 @@ for i in range(1,int(n)+1):
     for j in range(0,len(data)):
         if (data[j,4] > 0 and data[j,5] > 0 and data[j,6] > 0 and data[j,7] > 0):
             weight = (data[j,5]+data[j,6]-1.0)
-            outputfile.write(str(data[j,0])+'\t'+str(data[j,1])+'\t'+str(data[j,2])+'\t'+weight+'\n')
+            outputfile.write(str(data[j,0])+'\t'+str(data[j,1])+'\t'+str(data[j,2])+'\t'+str(weight)+'\n')
 exit()
