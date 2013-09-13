@@ -19,12 +19,14 @@ for i in range(1,n+1):
     fname_peak  = 'nbar-normed-'+name0+str(i+1000)[1:4]+'.v7.0.peakcorr.txt'
     fname_rand  = 'nbar-normed-cmass_dr11_north_randoms_ir4'+str(i+1000)[1:4]+nameend+'wghtv.txt'
     fname_randp = 'nbar-normed-cmass_dr11_north_randoms_ir4'+str(i+1000)[1:4]+nameend+'peakcorr.txt'
+    fname_randp_wb = 'nbar-normed-wbossonly-cmass_dr11_north_randoms_ir4'+str(i+1000)[1:4]+nameend+'peakcorr.txt'
 
     data_wboss  = np.loadtxt(dir+fname_wboss)
     data_upw    = np.loadtxt(dir+fname_upw)
     data_peak   = np.loadtxt(dir+fname_peak)
     data_rand   = np.loadtxt(dir+fname_rand)
     data_randp  = np.loadtxt(dir+fname_randp)
+    data_randp_wb  = np.loadtxt(dir+fname_randp_wb)
 
     if i==1: 
         x_axis      = data_wboss[:,0]
@@ -33,21 +35,25 @@ for i in range(1,n+1):
         sum_peak    = data_peak[:,3]
         sum_rand    = data_rand[:,3]
         sum_randp   = data_randp[:,3]
+        sum_randp_wb   = data_randp_wb[:,3]
     else: 
         sum_wboss   = sum_wboss+data_wboss[:,3]
         sum_upw     = sum_upw+data_upw[:,3]
         sum_peak    = sum_peak+data_peak[:,3]
         sum_rand    = sum_rand+data_rand[:,3]
         sum_randp   = sum_randp+data_randp[:,3]
-
+        sum_randp_wb   = sum_randp_wb+data_randp_wb[:,3]
 ratio_upw_wboss     = sum_upw/sum_wboss
 ratio_peak_wboss    = sum_peak/sum_wboss
 ratio_peak_upw      = sum_peak/sum_upw
+
 ratio_rand_upw      = sum_rand/sum_upw
 ratio_rand_wboss    = sum_rand/sum_wboss
+
 ratio_rand_peak     = sum_rand/sum_peak
 ratio_randp_rand    = sum_randp/sum_rand
 ratio_randp_peak    = sum_randp/sum_peak
+ratio_randp_wb_peak    = sum_randp_wb/sum_peak
 
 pthalo_fname= 'nbar-normed-cmass-dr11may22-N-Anderson.dat'
 pthalo_data = np.loadtxt(dir+pthalo_fname)
@@ -56,6 +62,7 @@ ratio_peak_pthalo   = sum_peak/(pthalo_data[:,3]*float(n))
 ratio_wboss_pthalo  = sum_wboss/(pthalo_data[:,3]*float(n))
 ratio_rand_pthalo   = sum_rand/(pthalo_data[:,3]*float(n))
 ratio_randp_pthalo  = sum_randp/(pthalo_data[:,3]*float(n))
+ratio_randp_wb_pthalo  = sum_randp_wb/(pthalo_data[:,3]*float(n))
 
 fig1 = py.figure(1,figsize=(8,5)) 
 ax10 = fig1.add_subplot(111) 
@@ -100,6 +107,8 @@ ax30.scatter(x_axis,ratio_rand_pthalo,color='k',
         label='${\overline{n}(z)_{rand}}/{\overline{n}(z)_{CMASS-dr11may}}$') 
 ax30.scatter(x_axis,ratio_randp_pthalo,color='m',
         label='${\overline{n}(z)_{rand-peak}}/{\overline{n}(z)_{CMASS-dr11may}}$') 
+ax30.scatter(x_axis,ratio_randp_wb_pthalo,color='g',
+        label='${\overline{n}(z)_{rand-peak-wb}}/{\overline{n}(z)_{CMASS-dr11may}}$') 
 ax30.set_xlim([0.43,0.7])
 ax30.set_ylim([0.9,1.2])
 ax30.set_xlabel('Redshift ($z$)',fontsize=14)
@@ -126,6 +135,8 @@ ax50.plot(x_axis,ratio_rand_upw,'b',linewidth=2,
 ax50.plot(x_axis,ratio_rand_wboss,'b--',linewidth=2,
         label='${\overline{n}(z)_{rand}}/{\overline{n}(z)_{w_{BOSS}}}$') 
 ax50.plot(x_axis,ratio_randp_peak,'k--',linewidth=2,
+        label='${\overline{n}(z)_{rand-peak}}/{\overline{n}(z)_{peak}}$') 
+ax50.plot(x_axis,ratio_randp_wb_peak,'m--',linewidth=2,
         label='${\overline{n}(z)_{rand-peak}}/{\overline{n}(z)_{peak}}$') 
 ax50.set_xlim([0.43,0.7])
 ax50.set_ylim([0.95,1.05])

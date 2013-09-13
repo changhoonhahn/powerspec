@@ -15,6 +15,14 @@ pro fibcoll_make_rand_peak_nbar,n,zseed
 
     readcol, datadir+rand_file, rand_ra, rand_dec, rand_red, rand_ipoly, rand_w_boss, rand_w_cp,$
         rand_w_red, rand_veto
+    vetomask_rand = where(rand_veto EQ 1 AND rand_w_boss GT 0)
+    rand_ra     = rand_ra[vetomask_rand]
+    rand_dec    = rand_dec[vetomask_rand]
+    rand_ipoly  = rand_ipoly[vetomask_rand] 
+    rand_w_boss = rand_w_boss[vetomask_rand]
+    rand_w_cp   = rand_w_cp[vetomask_rand]
+    rand_w_red  = rand_w_red[vetomask_rand]
+
     Ndata   = n_elements(ra)
     Nran    = n_elements(rand_ra)
     rand_az = fltarr(Nran)

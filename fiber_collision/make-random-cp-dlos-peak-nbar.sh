@@ -2,10 +2,7 @@
 name0="cmass_dr11_north_ir4"; namerand0="cmass_dr11_north_randoms_ir4"
 nameend=".v7.0.wghtv.txt"; nameend_wboss=".v7.0.wboss.txt"
 nameend_upw=".v7.0.upweight.txt"; nameend_peak=".v7.0.peakcorr.txt"
-nbarfname="nbar-cmass-dr11may22-N-Anderson.dat"
-tailnbarfname="nbar-dr11may22-N-Anderson-pz.dat"
 
-P0=20000; sscale=3600.0; Rbox=1800.0; box="3600"; FFT="FFT"; power="power_"; grid="360"
 maxjobs=6
 
 datadir="/mount/riachuelo1/hahn/data/manera_mock/dr11/"
