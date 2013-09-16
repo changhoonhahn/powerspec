@@ -89,24 +89,24 @@ ax20.set_ylabel('$\overline{n}(z)$ Ratio',fontsize=14)
 ax20.legend(loc='best')
 ax20.grid()
 
-fig3 = py.figure(3,figsize=(16,10))
+fig3 = py.figure(3,figsize=(9,7))
 ax30 = fig3.add_subplot(111)
-#ax30.plot(x_axis,ratio_upw_pthalo,'b',linewidth=2,
-#        label='${\overline{n}(z)_{upweight}}/{\overline{n}(z)_{CMASS-dr11may}}$') 
-ax30.plot(x_axis,ratio_wboss_pthalo,'b--',linewidth=2,
-        label='${\overline{n}(z)_{w_{BOSS}-only}}/{\overline{n}(z)_{CMASS-dr11may}}$') 
-ax30.plot(x_axis,ratio_peak_pthalo,'r--',linewidth=2,
-        label='${\overline{n}(z)_{peak}}/{\overline{n}(z)_{CMASS-dr11may}}$') 
-ax30.scatter(x_axis,ratio_rand_pthalo,color='k',
-        label='${\overline{n}(z)_{rand}}/{\overline{n}(z)_{CMASS-dr11may}}$') 
-ax30.scatter(x_axis,ratio_randp_pthalo,color='m',
-        label='${\overline{n}(z)_{rand-peak}}/{\overline{n}(z)_{CMASS-dr11may}}$') 
+ax30.text(0.50,1.10,str(n)+' Mocks',fontsize=18)
+ax30.plot(x_axis,ratio_upw_pthalo,'k',linewidth=3,
+        label=r"${\bar{n}(z)_{\rm{PTHalo}}}/{\bar{n}(z)_{\rm{CMASS-DR11}_{\rm{may}}}}$") 
+#ax30.plot(x_axis,ratio_wboss_pthalo,'b--',linewidth=2,
+#        label='${\overline{n}(z)_{w_{BOSS}-only}}/{\overline{n}(z)_{CMASS-dr11may}}$') 
+#ax30.plot(x_axis,ratio_peak_pthalo,'r--',linewidth=2,
+#        label='${\overline{n}(z)_{peak}}/{\overline{n}(z)_{CMASS-dr11may}}$') 
+#ax30.scatter(x_axis,ratio_rand_pthalo,color='k',
+#        label='${\overline{n}(z)_{rand}}/{\overline{n}(z)_{CMASS-dr11may}}$') 
+#ax30.scatter(x_axis,ratio_randp_pthalo,color='m',
+#        label='${\overline{n}(z)_{rand-peak}}/{\overline{n}(z)_{CMASS-dr11may}}$') 
 ax30.set_xlim([0.43,0.7])
 ax30.set_ylim([0.9,1.2])
-ax30.set_xlabel('Redshift ($z$)',fontsize=14)
-ax30.set_ylabel('$\overline{n}(z)$ Ratio',fontsize=14) 
-ax30.legend(loc='best')
-ax30.grid()
+ax30.set_xlabel('Redshift ($z$)',fontsize=18)
+ax30.set_ylabel(r"$\bar{n} (z)_{ \rm{norm}}$ Ratio",fontsize=18) 
+ax30.legend(loc='best',prop={'size':18})
 
 fig4 = py.figure(4,figsize=(8,5))
 ax40 = fig4.add_subplot(111)
