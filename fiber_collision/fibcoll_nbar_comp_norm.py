@@ -50,9 +50,14 @@ ratio_rand_peak     = sum_rand/sum_peak
 ratio_randp_rand    = sum_randp/sum_rand
 ratio_randp_peak    = sum_randp/sum_peak
 
-pthalo_fname= 'nbar-normed-cmass-dr11may22-N-Anderson.dat'
-pthalo_data = np.loadtxt(dir+pthalo_fname)
+pthalo_fname_dr11may= 'nbar-normed-cmass-dr11may22-N-Anderson.dat'
+pthalo_fname_dr10v5 = 'nbar-normed-dr10v5-N-Anderson.dat' 
+
+pthalo_data = np.loadtxt(dir+pthalo_fname_dr11may)
+pthalo_data_dr10v5  = np.loadtxt(dir+pthalo_fname_dr10v5)
+
 ratio_upw_pthalo    = sum_upw/(pthalo_data[:,3]*float(n))
+ratio_upw_pthalo_dr10v5 = sum_upw/(pthalo_data_dr10v5[:,3]*float(n))
 ratio_peak_pthalo   = sum_peak/(pthalo_data[:,3]*float(n))
 ratio_wboss_pthalo  = sum_wboss/(pthalo_data[:,3]*float(n))
 ratio_rand_pthalo   = sum_rand/(pthalo_data[:,3]*float(n))
@@ -93,7 +98,9 @@ fig3 = py.figure(3,figsize=(9,7))
 ax30 = fig3.add_subplot(111)
 ax30.text(0.50,1.10,str(n)+' Mocks',fontsize=18)
 ax30.plot(x_axis,ratio_upw_pthalo,'k',linewidth=3,
-        label=r"${\bar{n}(z)_{\rm{PTHalo}}}/{\bar{n}(z)_{\rm{CMASS-DR11}_{\rm{may}}}}$") 
+        label=r"${\bar{n}(z)_{\rm{PTHalo}}}/{\bar{n}(z)_{\rm{CMASS-DR11may}}}$") 
+ax30.plot(x_axis,ratio_upw_pthalo_dr10v5,'b--',linewidth=3,
+        label=r"${\bar{n}(z)_{\rm{PTHalo}}}/{\bar{n}(z)_{\rm{CMASS-DR10v5}}}$") 
 #ax30.plot(x_axis,ratio_wboss_pthalo,'b--',linewidth=2,
 #        label='${\overline{n}(z)_{w_{BOSS}-only}}/{\overline{n}(z)_{CMASS-dr11may}}$') 
 #ax30.plot(x_axis,ratio_peak_pthalo,'r--',linewidth=2,
