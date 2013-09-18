@@ -67,7 +67,7 @@ pro fibcoll_nbar_comp_norm,n,noweight=noweight,upweight=upweight,shuffle=shuffle
         endfor 
         weights_cum = total(weights,/cumulative)
         weights_max = max(weights_cum)
-        total_gals  = total(double(w_cp+w_red-1.0))
+;        total_gals  = total(double(w_cp+w_red-1.0))
 
         for i=0L,200L do begin 
            zlim = where(az ge z_low_bound[i] and az lt z_high_bound[i],count_zlim)
@@ -195,11 +195,11 @@ pro fibcoll_nbar_comp_norm,n,noweight=noweight,upweight=upweight,shuffle=shuffle
         w_boss  = w_boss[vetomask]
         w_cp    = w_cp[vetomask]
         w_red   = w_red[vetomask] 
-        
+       
         weights = fltarr(n_elements(w_boss))
         for i=0L,n_elements(w_boss)-1L do begin 
             if (w_boss[i] GT 0 AND w_red[i] GT 0 AND w_cp[i] GT 0) then begin 
-                weights[i]  = 1.0 
+                weights[i]  = double(w_boss[i])
             endif else begin 
                 weights[i]  = double(w_cp[i]+w_red[i]-1.0) 
             endelse 
