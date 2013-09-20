@@ -36,28 +36,19 @@ for i in range(1,n+1):
         sum_peak    = sum_peak+data_peak[:,3]
         sum_rand    = sum_rand+data_rand[:,3]
         sum_randp   = sum_randp+data_randp[:,3]
-
-ratio_upw_wboss     = sum_upw/sum_wboss
-ratio_peak_wboss    = sum_peak/sum_wboss
 ratio_peak_upw      = sum_peak/sum_upw
 
 for i in range(len(ratio_peak_upw)): 
     if x_axis[i] < 0.43 or x_axis[i] > 0.7: 
         ratio_peak_upw[i] = 1.0
 
-pthalo_fname    = 'nbar-cmass-dr11may22-N-Anderson'
+pthalo_fname    = 'nbar-dr10v5-N-Anderson'
 pthalo_data     = np.loadtxt(dir+pthalo_fname+'.dat')
 
 pthalo_data[:,3] = ratio_peak_upw*pthalo_data[:,3]
 
-corrected_fname = pthalo_fname+'.peaknbarcorr'
-corrected_file  = open(corrected_fname,'w')
+corrected_fname = pthalo_fname+'-peaknbarcorr.dat'
+corrected_file  = open(dir+corrected_fname,'w')
 for i in range(len(pthalo_data[:,3])): 
     corrected_file.write(str(pthalo_data[i,0])+'\t'+str(pthalo_data[i,1])+'\t'+str(pthalo_data[i,2])+'\t'+str(pthalo_data[i,3])+'\n')
-
-np.savetxt(dir+corrected_fname+'.dat',pthalo_data)
 exit()
-#fig1 = py.figure(1)
-#ax10 = fig1.add_subplot(111)
-#ax10.plot(x_axis,ratio_peak_upw)
-#py.show()

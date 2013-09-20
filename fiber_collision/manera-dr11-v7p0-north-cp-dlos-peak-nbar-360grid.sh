@@ -60,24 +60,26 @@ for i in $(seq 1 $n); do
     fi 
 done; echo $n 
 
-ipython -noconfirm_exit rand_combine-peak-nbar.py $n 
+randcomb_fname="cmass_dr11_north_"$n"_randoms_ir4_combined_wghtr.v7.0.peakcorr.txt"
+if [[ ! -a $randcomb_fname ]]; then 
+    ipython -noconfirm_exit rand_combine-peak-nbar.py $n 
+fi
 
+# n(z) correction for FKP weights (less important than above).
 ipython -noconfirm_exit fibcoll_nbar_peak_correct.py $n
 
-corrnbarfname="nbar-cmass-dr11may22-N-Anderson.peaknbarcorr.dat"
-randname="cmass_dr11_north_"$n"_randoms_ir4_combined_wghtr.v7.0.peakcorr.txt"
-FFTrandname=$FFTdir$FFT$randname".grid"$grid".P0"$P0".box"$box
-#FFTrandname=$FFTdir"FFTcmass_dr11_north_randoms_ir4_combined_wboss.v7.0.wghtv.txt.grid360.P020000.box3600"
+corrnbarfname="nbar-dr10v5-N-Anderson-peaknbarcorr.dat"
+FFTrandname=$FFTdir$FFT$randcomb_fname".grid"$grid".P0"$P0".box"$box
 if [ -a $FFTrandname ]; then
     echo $FFTrandname
 else
-    ./FFT-fkp-mock-cp-dlos-peak-nbar-360grid.exe $Rbox 1 $P0 $datadir$corrnbarfname $datadir$tailnbarfname $datadir$randname $FFTrandname
+    ./FFT-fkp-mock-cp-dlos-peak-nbar-360grid.exe $Rbox 1 $P0 $datadir$corrnbarfname $datadir$tailnbarfname $datadir$randcomb_fname $FFTrandname
     echo $FFTrandname
 fi
 
 for i in $(seq 1 $n); do 
     i=$( printf '%03d' $i ) 
-#    echo $i
+    echo $i
     fname=$datadir$name0$i$nameend
     FFTname=$FFTdir$FFT$name0$i$nameend"-cp-dlos-peak-nbar.grid"$grid".P0"$P0".box"$box
     powername=$powerdir$power$name0$i$nameend"-cp-dlos-peak-nbar.grid"$grid".P0"$P0".box"$box

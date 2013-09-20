@@ -25,7 +25,7 @@ c      complex dcg(Ngrid/2+1,Ngrid,Ngrid),dcr(Ngrid/2+1,Ngrid,Ngrid)
       open(unit=4,file=randfname,status='old',form='unformatted')
       read(4)dcr
       read(4)I10,I12,I22,I13,I23,I33
-      read(4)P0,Nr!,wsysr
+      read(4)P0,Nr,wsysr
       close(4)
       if (P0m.ne.P0) then
          write(*,*)'P0s do not match'

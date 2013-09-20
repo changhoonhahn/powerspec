@@ -4,9 +4,9 @@ import sys
 dir="/mount/riachuelo1/hahn/data/manera_mock/dr11/"
 namebegin="cmass_dr11_north_randoms_ir4"
 nameend=".v7.0.wghtv.txt"
-
+print "random combine"
 n = sys.argv[1]
-outputname=dir+"cmass_dr11_north_"+n+"_randoms_ir4_combined_wboss.v7.0.wghtv.txt"
+outputname=dir+"cmass_dr11_north_"+n+"_randoms_ir4_combined_wboss_veto.v7.0.wghtv.txt"
 outputfile=open(outputname,'w')
 for i in range(1,int(n)+1):
     if i < 10:
@@ -19,7 +19,6 @@ for i in range(1,int(n)+1):
     data=np.loadtxt(fname)
 
     for j in range(0,len(data)):
-        if (data[j,4] > 0):
+        if (data[j,4] > 0 and data[j,7] > 0):
             outputfile.write(str(data[j,0])+'\t'+str(data[j,1])+'\t'+str(data[j,2])+'\t'+str(data[j,4])+'\t'+str(data[j,5])+'\t'+str(data[j,6])+'\n')
-
 exit()

@@ -63,6 +63,7 @@ cmass_dr10v5_fname  = 'nbar-normed-dr10v5-N-Anderson.dat'
 
 cmass_dr11may_data  = np.loadtxt(dir+cmass_dr11may_fname)
 cmass_dr10v5_data   = np.loadtxt(dir+cmass_dr10v5_fname)
+
 ################################################################################################################
 # Nbar(z) Ratios: 
 ################################################################################################################

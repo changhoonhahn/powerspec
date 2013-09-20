@@ -1,5 +1,5 @@
 pro fibcoll_nbar_comp_norm,n,noweight=noweight,upweight=upweight,shuffle=shuffle,random=random,peaknbar=peaknbar,$
-    randpeak=randpeak,cmass=cmass,dr10=dr10
+    randpeak=randpeak,cmass=cmass,dr10=dr10,combined=combined
     datadir = '/mount/riachuelo1/hahn/data/manera_mock/dr11/'
     chichidir = '/mount/chichipio2/hahn/data/manera_mock/v5p2/'
     om0=0.27 
@@ -36,11 +36,8 @@ pro fibcoll_nbar_comp_norm,n,noweight=noweight,upweight=upweight,shuffle=shuffle
             zlim_nbar[i] = nbarz[i]*zlim_comvol[i]/total_gals
         endfor 
         zlim_nbar = zlim_nbar/total(zlim_nbar[where(z_mid_bound gt 0.43 and z_mid_bound lt 0.7)])
-        if keyword_set(dr10) then begin 
-            out_fname = 'nbar-normed-dr10v5-N-Anderson.dat'
-        endif else begin 
-            out_fname = 'nbar-normed-cmass-dr11may22-N-Anderson.dat'
-        endelse 
+        out_fname = 'nbar-normed-cmass-dr11may22-N-Anderson.dat'
+        if keyword_set(dr10) then out_fname = 'nbar-normed-dr10v5-N-Anderson.dat'
     endif 
     
     if keyword_set(noweight) then begin 
@@ -113,7 +110,6 @@ pro fibcoll_nbar_comp_norm,n,noweight=noweight,upweight=upweight,shuffle=shuffle
            if (count_zlim GT 0) then zlim_count = (total(weights[zlim])/weights_max);*total_gals
            zlim_nbar[i] = zlim_count;/zlim_comvol[i] 
         endfor
-        ;print, total(zlim_nbar[where(z_mid_bound gt 0.43 and z_mid_bound lt 0.7)]),total(zlim_nbar)
         zlim_nbar = zlim_nbar/total(zlim_nbar)
         out_fname = 'nbar-normed-cmass_dr11_north_ir4'+strmid(strtrim(string(n+1000),1),1)+'.v7.0.upweight.txt'
         if keyword_set(dr10) then out_fname = 'nbar-normed-'+'cmass_dr10_north_ir4'+strmid(strtrim(string(n+1000),1),1)+$
@@ -215,7 +211,6 @@ pro fibcoll_nbar_comp_norm,n,noweight=noweight,upweight=upweight,shuffle=shuffle
            zlim_nbar[i] = zlim_count;/zlim_comvol[i] 
         endfor
         zlim_nbar = zlim_nbar/total(zlim_nbar)
-        out_fname = 'nbar-normed-'+data_fname
         out_fname = 'nbar-normed-cmass_dr11_north_randoms_ir4'+strmid(strtrim(string(n+1000),1),1)+$
             '.v7.0.wghtv.txt'
         if keyword_set(dr10) then out_fname = 'nbar-normed-cmass_dr10_north_randoms_ir4'+$
@@ -243,6 +238,28 @@ pro fibcoll_nbar_comp_norm,n,noweight=noweight,upweight=upweight,shuffle=shuffle
         endfor
         zlim_nbar = zlim_nbar/total(zlim_nbar)
         out_fname = 'nbar-normed-'+data_fname
+    endif 
+    if keyword_set(combined) then begin 
+        data_fname = 'cmass_dr11_north_610_randoms_ir4_combined_wboss_veto.v7.0.wghtv.txt'
+        print,data_fname
+
+        readcol,datadir+data_fname,ra,dec,az,w_boss,w_cp,w_red
+        
+        weights = fltarr(n_elements(w_boss))
+        for i=0L,n_elements(w_boss)-1L do begin 
+            weights[i]  = 1.0
+        endfor 
+        weights_cum = total(weights,/cumulative)
+        weights_max = max(weights_cum)
+
+        for i=0L,200L do begin 
+           zlim = where(az ge z_low_bound[i] and az lt z_high_bound[i],count_zlim)
+           zlim_count = 0.0
+           if (count_zlim GT 0) then zlim_count = (total(weights[zlim])/weights_max)
+           zlim_nbar[i] = zlim_count
+        endfor
+        zlim_nbar = zlim_nbar/total(zlim_nbar)
+        out_fname = datadir+'nbar-normed-'+data_fname
     endif 
 
     openw,lun,datadir+out_fname,/get_lun 
