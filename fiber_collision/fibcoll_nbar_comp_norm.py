@@ -19,7 +19,7 @@ for i in range(1,n+1):
     fname_wboss = 'nbar-normed-'+name0+str(i+1000)[1:4]+nameend+'wboss.txt'
     fname_upw   = 'nbar-normed-'+name0+str(i+1000)[1:4]+nameend+'upweight.txt'
     fname_peak  = 'nbar-normed-'+name0+str(i+1000)[1:4]+'.v7.0.peakcorr.txt'
-    fname_rand  = 'nbar-normed-cmass_dr11_north_randoms_ir4'+str(i+1000)[1:4]+nameend+'wghtv.txt'
+    fname_rand  = 'nbar-normed-cmass_dr11_north_randoms_ir4'+str(i+1000)[1:4]+nameend+'upweight.txt'
     fname_randp = 'nbar-normed-cmass_dr11_north_randoms_ir4'+str(i+1000)[1:4]+nameend+'peakcorr.txt'
 
     fname_wboss_dr10 = 'nbar-normed-'+name0dr10+str(i+1000)[1:4]+nameenddr10+'wboss.txt'
@@ -162,9 +162,9 @@ fig5 = py.figure(5,figsize=(9,7))
 ax50 = fig5.add_subplot(111)
 ax50.text(0.45,1.015,str(n)+' Mocks',fontsize=18)
 ax50.plot(x_axis,ratio_rand_upw,'b',linewidth=3,
-        label=r'${\bar{n}(z)_{\rm{rand}}}/{\bar{n}(z)_{\rm{upweighted},\rm{PTHalo-v7.0}}}$') 
-ax50.scatter(x_axis,ratio_rand_upw_v5p2,color='m',
-        label=r'${\bar{n}(z)_{\rm{rand},\rm{PTHalo-v5.2}}}/{\bar{n}(z)_{\rm{upweighted},\rm{PTHalo-v5.2}}}$') 
+        label=r'${\bar{n}(z)_{\rm{rand},\rm{upweight}}}/{\bar{n}(z)_{\rm{upweighted},\rm{PTHalo-v7.0}}}$') 
+#ax50.scatter(x_axis,ratio_rand_upw_v5p2,color='m',
+#        label=r'${\bar{n}(z)_{\rm{rand},\rm{PTHalo-v5.2}}}/{\bar{n}(z)_{\rm{upweighted},\rm{PTHalo-v5.2}}}$') 
 ax50.plot(x_axis,ratio_randp_peak,'k',linewidth=3,
         label=r'${\bar{n}(z)_{\rm{rand},\rm{peak}+\bar{n}(z)}}/{\bar{n}(z)_{\rm{peak}+\bar{n}(z)}}$') 
 ax50.set_xlim([0.43,0.7])

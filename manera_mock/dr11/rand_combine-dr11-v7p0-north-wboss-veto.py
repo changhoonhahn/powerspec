@@ -6,7 +6,7 @@ namebegin="cmass_dr11_north_randoms_ir4"
 nameend=".v7.0.wghtv.txt"
 print "random combine"
 n = sys.argv[1]
-outputname=dir+"cmass_dr11_north_"+n+"_randoms_ir4_combined_wboss_veto.v7.0.wghtv.txt"
+outputname=dir+"cmass_dr11_north_"+n+"_randoms_ir4_combined.v7.0.wboss.veto.txt"
 outputfile=open(outputname,'w')
 for i in range(1,int(n)+1):
     if i < 10:

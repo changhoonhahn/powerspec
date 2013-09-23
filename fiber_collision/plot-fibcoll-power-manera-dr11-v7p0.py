@@ -19,7 +19,7 @@ nrange_end = int(sys.argv[1])+1
 nrange = range(1,nrange_end)
 n = len(nrange)
 for i in nrange:
-    mockname_up     = fname0+str(i+1000)[1:4]+fname1+'_upweighted.grid360.P020000.box3600'
+    mockname_up     = fname0+str(i+1000)[1:4]+'.v7.0.'+str(n)+'randoms.upweight.grid360.P020000.box3600'
     mockname_wb     = fname0+str(i+1000)[1:4]+fname1+'_wbossonly.grid360.P020000.box3600'
     mockname_no     = fname0+str(i+1000)[1:4]+fname1+'_noweight.grid360.P020000.box3600'
     mockname_dlos   = fname0+str(i+1000)[1:4]+fname1+'-cp-pthalo-dloshist.grid360.P020000.box3600'

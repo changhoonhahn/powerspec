@@ -179,30 +179,32 @@ pro fibcoll_nbar_comp_norm,n,noweight=noweight,upweight=upweight,shuffle=shuffle
     endif 
     
     if keyword_set(random) then begin
+        ;data_fname = datadir+'cmass_dr11_north_randoms_ir4'+strmid(strtrim(string(n+1000),1),1)+$
+        ;    '.v7.0.wghtv.txt'
         data_fname = datadir+'cmass_dr11_north_randoms_ir4'+strmid(strtrim(string(n+1000),1),1)+$
-            '.v7.0.wghtv.txt'
-        if keyword_set(dr10) then data_fname = chichidir+'cmass_dr10_north_randoms_ir4'+$
-            strmid(strtrim(string(n+1000),1),1)+'.v5.2.wghtv.txt'
+            '.v7.0.upweight.txt'
+        ;if keyword_set(dr10) then data_fname = chichidir+'cmass_dr10_north_randoms_ir4'+$
+        ;    strmid(strtrim(string(n+1000),1),1)+'.v5.2.wghtv.txt'
         print,data_fname
 
         readcol,data_fname,ra,dec,az,ipoly,w_boss,w_cp,w_red,veto
-        vetomask= where(veto EQ 1)
-        az     = az[vetomask]
-        w_boss  = w_boss[vetomask]
-        w_cp    = w_cp[vetomask]
-        w_red   = w_red[vetomask] 
+        ;vetomask= where(veto EQ 1)
+        ;az     = az[vetomask]
+        ;w_boss  = w_boss[vetomask]
+        ;w_cp    = w_cp[vetomask]
+        ;w_red   = w_red[vetomask] 
        
         weights = fltarr(n_elements(w_boss))
         for i=0L,n_elements(w_boss)-1L do begin 
-            if (w_boss[i] GT 0 AND w_red[i] GT 0 AND w_cp[i] GT 0) then begin 
-                weights[i]  = double(w_boss[i])
-            endif else begin 
-                weights[i]  = double(w_cp[i]+w_red[i]-1.0) 
-            endelse 
+            weights[i] = 1.0
+;            if (w_boss[i] GT 0 AND w_red[i] GT 0 AND w_cp[i] GT 0) then begin 
+;                weights[i]  = double(w_boss[i])
+;            endif else begin 
+;                weights[i]  = double(w_cp[i]+w_red[i]-1.0) 
+;            endelse 
         endfor 
         weights_cum = total(weights,/cumulative)
         weights_max = max(weights_cum)
-;        total_gals  = total(double(w_cp+w_red-1.0))
 
         for i=0L,200L do begin 
            zlim = where(az ge z_low_bound[i] and az lt z_high_bound[i],count_zlim)
@@ -212,9 +214,9 @@ pro fibcoll_nbar_comp_norm,n,noweight=noweight,upweight=upweight,shuffle=shuffle
         endfor
         zlim_nbar = zlim_nbar/total(zlim_nbar)
         out_fname = 'nbar-normed-cmass_dr11_north_randoms_ir4'+strmid(strtrim(string(n+1000),1),1)+$
-            '.v7.0.wghtv.txt'
-        if keyword_set(dr10) then out_fname = 'nbar-normed-cmass_dr10_north_randoms_ir4'+$
-            strmid(strtrim(string(n+1000),1),1)+'.v5.2.wghtv.txt'
+            '.v7.0.upweight.txt'
+        ;if keyword_set(dr10) then out_fname = 'nbar-normed-cmass_dr10_north_randoms_ir4'+$
+        ;    strmid(strtrim(string(n+1000),1),1)+'.v5.2.wghtv.txt'
     endif 
     if keyword_set(randpeak) then begin
         data_fname='cmass_dr11_north_randoms_ir4'+strmid(strtrim(string(n+1000),1),1)+$
@@ -240,7 +242,10 @@ pro fibcoll_nbar_comp_norm,n,noweight=noweight,upweight=upweight,shuffle=shuffle
         out_fname = 'nbar-normed-'+data_fname
     endif 
     if keyword_set(combined) then begin 
-        data_fname = 'cmass_dr11_north_610_randoms_ir4_combined_wboss_veto.v7.0.wghtv.txt'
+        ;data_fname = 'cmass_dr11_north_25_randoms_ir4_combined.v7.0.wboss.txt'
+        ;data_fname = 'cmass_dr11_north_25_randoms_ir4_combined.v7.0.wboss.veto.txt' 
+        ;data_fname = 'cmass_dr11_north_25_randoms_ir4_combined_wghtr.v7.0.peakcorr.txt'
+        data_fname = 'cmass_dr11_north_25_randoms_ir4_combined.v7.0.upweight.txt'
         print,data_fname
 
         readcol,datadir+data_fname,ra,dec,az,w_boss,w_cp,w_red
@@ -259,7 +264,7 @@ pro fibcoll_nbar_comp_norm,n,noweight=noweight,upweight=upweight,shuffle=shuffle
            zlim_nbar[i] = zlim_count
         endfor
         zlim_nbar = zlim_nbar/total(zlim_nbar)
-        out_fname = datadir+'nbar-normed-'+data_fname
+        out_fname = 'nbar-normed-'+data_fname
     endif 
 
     openw,lun,datadir+out_fname,/get_lun 
