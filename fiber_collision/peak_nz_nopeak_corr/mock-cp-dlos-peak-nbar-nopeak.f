@@ -7,7 +7,7 @@
       REAL zt,zlo,zhi,garb1,garb2,garb3
       real cpz,cpnbarz
       REAL sigma,peakfrac
-      PARAMETER(sigma=0.403852182,peakfrac=1.0)
+      PARAMETER(sigma=0.403852182,peakfrac=0.0)
       parameter(Nmax=2*10**8,pi=3.141592654)
       parameter(Om0=0.27,OL0=0.73)
       parameter(cspeed=299800.0)

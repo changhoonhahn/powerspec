@@ -14,8 +14,9 @@ ifort -O3 -o mock-cp-dlos-peak-nbar.exe mock-cp-dlos-peak-nbar.f
 ifort -O3 -o FFT-fkp-peak-nbar-corr-mock-360grid.exe FFT-fkp-peak-nbar-corr-mock-360grid.f -L/usr/local/fftw_intel_s/lib -lsfftw -lsfftw
 
 # p(z) for the tail of the dLOS distribution based on the normalized n(z)_upweight:
-tailnbarfname="nbar-normed-cmass_dr11_north_"$n"_mocks_ir4_pz.v7.0.upweight.txt"
-ipython -noconfirm_exit fibcoll_nbarz_pz_peak_nbar.py $n $datadir $tailnbarfname
+nbar_upweight="nbar-normed-cmass_dr11_north_25_randoms_ir4_combined.v7.0.upweight"
+ipython -noconfirm_exit fibcoll_nbarz_pz_peak_nbar.py $datadir $nbar_upweight $txt 
+tailnbarfname=$nbar_upweight"-pz"$txt
 echo $tailnbarfname
 
 # Constructing the Peak+n(z) corrected Mock catalogs
@@ -36,7 +37,7 @@ done
 wait 
 
 # n(z) correction for FKP weights:
-#ipython -noconfirm_exit fibcoll_nbar_wfkp_peak_nbar.py $n $datadir$nbarfname
+ipython -noconfirm_exit fibcoll_nbar_wfkp_peak_nbar.py $n $datadir$nbarfname
 nbar_wfkp_corr_fname=$nbarfname"-peaknbarcorr.dat"
 
 for i in $(seq 1 $n); do 
@@ -46,6 +47,6 @@ for i in $(seq 1 $n); do
     FFTname=$FFTdir$FFT$name0$i".v7.0.peakcorr.grid"$grid".P0"$P0".box"$box
     powername=$powerdir$power$name0$i".v7.0."$n"randoms.peakcorr.grid"$grid".P0"$P0".box"$box
      
-#    ./FFT-fkp-peak-nbar-corr-mock-360grid.exe $Rbox 0 $P0 $datadir$nbar_wfkp_corr_fname $datadir$tailnbarfname $fname $FFTname
+    ./FFT-fkp-peak-nbar-corr-mock-360grid.exe $Rbox 0 $P0 $datadir$nbar_wfkp_corr_fname $datadir$tailnbarfname $fname $FFTname
     echo $FFTname
 done

@@ -79,45 +79,133 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
       close(3)
       call spline(z,selfun,Nnz,3e30,3e30,sec)
       call spline(dm,selfunchi,Nnz,3e30,3e30,secchi)
+
+      Ntail=0
+      ALLOCATE(tailz(Nmax),tailnbarz(Nmax),tailsec(Nmax))
+      CALL getarg(5,tailnbarfile)
+      OPEN(UNIT=6,FILE=tailnbarfile,STATUS='old',FORM='FORMATTED')
+      DO kk=1,Nmax
+            READ(6,*,END=115) cpz,cpnbarz
+            tailz(kk)=cpz
+            tailnbarz(kk)=cpnbarz   
+            Ntail=Ntail+1
+      ENDDO  
+ 115  CONTINUE 
+      CLOSE(6) 
+      CALL spline(tailz,tailnbarz,Ntail,3e30,3e30,tailsec)
       
       if (iflag.eq.0) then ! run on mock
-         CALL getarg(5,lssfile)
+         CALL getarg(6,lssfile)
          allocate(rg(3,Nmax),nbg(Nmax),ig(Nmax),wg(Nmax),wwg(Nmax))
          open(unit=4,file=lssfile,status='old',form='formatted')
 
          Ngal=0 
+         wNgal=0
          wsys=0.0
+         wwsys=0.0
+         CALL RANDOM_SEED
          DO i=1,Nmax
-            READ(4,*,END=13)ra,dec,az,wb,wcp,wred,veto
+            READ(4,*,END=13)ra,dec,az,ipoly,wb,wcp,wred,redtru,flag,m1
+     &      ,m2,veto
+            IF (wb.gt.0 .and. wcp.gt.0 .and. wred.gt.0 .and. veto.gt.0)
+     &      THEN
+                wwg(i)=float(wb)*(float(wcp)+float(wred)-1.0)
+            ELSE
+                wwg(i)=0.0
+            ENDIF
+            wNgal=wNgal+1
+            wwsys=wwsys+wwg(i)
+
             ra=ra*(pi/180.)
             dec=dec*(pi/180.)
-            IF (wcp.gt.0 .and. wb.gt.0 .and. wred.gt.0 .and. veto.gt.0) 
+            IF (wcp.eq.1 .and. wb.gt.0 .and. wred.gt.0 .and. veto.gt.0) 
      &      THEN 
                 rad=chi(az)
-                wg(i)=float(wb)*(float(wcp)+float(wred)-1.0)
-                rg(1,i)=rad*cos(dec)*cos(ra)
-                rg(2,i)=rad*cos(dec)*sin(ra)
-                rg(3,i)=rad*sin(dec)
-                nbg(i)=nbar(az,Nnz,z,selfun,sec)
-                wsys=wsys+wg(i)
+                wg(Ngal+1)=float(wb)*(float(wcp)+float(wred)-1.0)
+                rg(1,Ngal+1)=rad*cos(dec)*cos(ra)
+                rg(2,Ngal+1)=rad*cos(dec)*sin(ra)
+                rg(3,Ngal+1)=rad*sin(dec)
+                nbg(Ngal+1)=nbar(az,Nnz,z,selfun,sec)
+                wsys=wsys+wg(Ngal+1)
                 Ngal=Ngal+1
+            ELSEIF (wcp.gt.1 .and. wb.gt.0 .and. wred.gt.0 .and. 
+     &      veto.gt.0) THEN
+                rad=chi(az)
+                wg(Ngal+1)=float(wb)*float(wred)
+                rg(1,Ngal+1)=rad*cos(dec)*cos(ra)
+                rg(2,Ngal+1)=rad*cos(dec)*sin(ra)
+                rg(3,Ngal+1)=rad*sin(dec)
+                nbg(Ngal+1)=nbar(az,Nnz,z,selfun,sec)
+                wsys=wsys+wg(Ngal+1)
+                Ngal=Ngal+1
+                
+                DO WHILE (wcp .gt. 1)
+                    CALL RANDOM_NUMBER(ran1) 
+                    CALL RANDOM_NUMBER(ran2)
+                    CALL RANDOM_NUMBER(ran3)
+                    IF (ran3 .LT. peakfrac) THEN   ! Contained within the dLOS distribution peak.
+                        ran2=(-3.0+ran2*6.0)*sigma
+                        pr=peakpofr(ran2)
+                        DO WHILE (pr .le. ran1)
+                            CALL RANDOM_NUMBER(ran1)
+                            CALL RANDOM_NUMBER(ran2)
+                            ran2=(-3.0+ran2*6.0)*sigma
+                            pr=peakpofr(ran2)
+                        ENDDO
+                        rad=rad+ran2
+                        
+                        wcp=wcp-1 
+                        wg(Ngal+1)=float(wb)
+                        rg(1,Ngal+1)=rad*cos(dec)*cos(ra)
+                        rg(2,Ngal+1)=rad*cos(dec)*sin(ra)
+                        rg(3,Ngal+1)=rad*sin(dec)
+                        nbg(Ngal+1)=nbarchi(rad,Nnz,dm,selfunchi,
+     &                      secchi)
+                        wsys=wsys+wg(Ngal+1)
+                        Ngal=Ngal+1
+c                        WRITE(*,*) ran2,pr,rad,nbg(Ngal),wg(Ngal)
+                    ELSE
+                        ran2=0.43+ran2*0.27
+                        pz=tailnbar(ran2,Ntail,tailz,tailnbarz,tailsec)
+                        DO WHILE (pz .LT. ran1)
+                            CALL RANDOM_NUMBER(ran1)
+                            CALL RANDOM_NUMBER(ran2)
+                            ran2=0.43+ran2*0.27
+                            pz=tailnbar(ran2,Ntail,tailz,tailnbarz,
+     &                          tailsec)
+                        ENDDO
+                        rad=chi(ran2)
+                        
+                        wcp=wcp-1 
+                        wg(Ngal+1)=float(wb)
+                        rg(1,Ngal+1)=rad*cos(dec)*cos(ra)
+                        rg(2,Ngal+1)=rad*cos(dec)*sin(ra)
+                        rg(3,Ngal+1)=rad*sin(dec)
+                        nbg(Ngal+1)=nbarchi(rad,Nnz,dm,selfunchi,
+     &                      secchi)
+                        wsys=wsys+wg(Ngal+1)
+                        Ngal=Ngal+1
+c                        WRITE(*,*) ran2,pz,rad,nbg(Ngal),wg(Ngal)
+                    ENDIF 
+                ENDDO 
             ELSE 
                 ra=ra*(pi/180.)
                 dec=dec*(pi/180.)
                 rad=chi(az)
-                wg(i)=0.0
-                rg(1,i)=rad*cos(dec)*cos(ra)
-                rg(2,i)=rad*cos(dec)*sin(ra)
-                rg(3,i)=rad*sin(dec)
-                nbg(i)=nbar(az,Nnz,z,selfun,sec)
-                wsys=wsys+wg(i)
+                wg(Ngal+1)=0.0
+                rg(1,Ngal+1)=rad*cos(dec)*cos(ra)
+                rg(2,Ngal+1)=rad*cos(dec)*sin(ra)
+                rg(3,Ngal+1)=rad*sin(dec)
+                nbg(Ngal+1)=nbar(az,Nnz,z,selfun,sec)
+                wsys=wsys+wg(Ngal+1)
                 Ngal=Ngal+1
             ENDIF
          enddo
  13      continue
          close(4)
 
-         WRITE(*,*) 'Wsys=',wsys,'Ngal=',Ngal
+         WRITE(*,*) 'Normal Wsys=',wwsys,'Normal Ngal=',wNgal
+         WRITE(*,*) 'Corrected Wsys=',wsys,'Corrected Ngal=',Ngal
          WRITE(*,*) 'Ngal,sys=',wsys/float(Ngal)
          
          call PutIntoBox(Ngal,rg,Rbox,ig,Ng,Nmax)
@@ -129,14 +217,14 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
          call fftwnd_f77_one(planf,dcg,dcg)      
          call fcomb(Lm,dcg,Ng)
 
-         call getarg(6,filecoef)
+         call getarg(7,filecoef)
          open(unit=6,file=filecoef,status='unknown',form='unformatted')
          write(6)(((dcg(ix,iy,iz),ix=1,Lm/2+1),iy=1,Lm),iz=1,Lm)
          write(6)P0,Ng,wsys 
          close(6)
 
        elseif (iflag.eq.1) then 
-         call getarg(5,randomfile)
+         call getarg(6,randomfile)
          allocate(rr(3,Nmax),nbr(Nmax),ir(Nmax),wr(Nmax))
          open(unit=4,file=randomfile,status='old',form='formatted')
          Nran=0 
@@ -182,7 +270,7 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
          call fftwnd_f77_one(planf,dcr,dcr)      
          call fcomb(Lm,dcr,Nr)
 
-         call getarg(6,filecoef)
+         call getarg(7,filecoef)
          open(unit=6,file=filecoef,status='unknown',form='unformatted')
          write(6)(((dcr(ix,iy,iz),ix=1,Lm/2+1),iy=1,Lm),iz=1,Lm)
          write(6)real(I10),real(I12),real(I22),real(I13),real(I23),

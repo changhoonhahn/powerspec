@@ -1,7 +1,7 @@
       implicit none
       integer i,j,k,ii,jj,kk,n,nn
       integer Ngal,Nmax
-      integer Nnz,Ntail,wNgal
+      integer Nnz,Ntail,wNgal,cpcount,cppeakcount,cptailcount
       integer Ng,l,ipoly,wb,wcp,wred,flag
       real pi,cspeed,Om0,OL0,redtru,m1,m2,veto
       REAL zt,zlo,zhi,garb1,garb2,garb3
@@ -65,6 +65,9 @@
       wNgal=0
       wsys=0.0
       wwsys=0.0
+      cpcount=0
+      cppeakcount=0
+      cptailcount=0
       CALL RANDOM_SEED
       DO i=1,Nmax
         READ(4,*,END=13)ra,dec,az,ipoly,wb,wcp,wred,redtru,flag,m1
@@ -93,11 +96,12 @@
                 Ngal=Ngal+1
             ELSEIF (wcp.gt.1 .and. wb.gt.0 .and. wred.gt.0 .and. 
      &      veto.gt.0) THEN
+                cpcount=cpcount+1
                 out_ra(Ngal+1)=ra
                 out_dec(Ngal+1)=dec
                 out_az(Ngal+1)=az
-                out_wboss(Ngal+1)=wb
-                out_wred(Ngal+1)=wred
+                out_wboss(Ngal+1)=float(wb)
+                out_wred(Ngal+1)=float(wred)
                 out_wcp(Ngal+1)=1.0
                 out_veto(Ngal+1)=veto
                 rad=chi(az)
@@ -110,6 +114,7 @@
                     CALL RANDOM_NUMBER(ran2)
                     CALL RANDOM_NUMBER(ran3)
                     IF (ran3 .LT. peakfrac) THEN
+                        cppeakcount=cppeakcount+1
                         ran2=(-3.0+ran2*6.0)*sigma
                         pr=peakpofr(ran2)
                         DO WHILE (pr .le. ran1)
@@ -126,15 +131,16 @@
                         out_ra(Ngal+1)=ra
                         out_dec(Ngal+1)=dec
                         out_az(Ngal+1)=dmtoz(rad,Nnz,dm,z,dmsec)
-                        out_wboss(Ngal+1)=wb
+                        out_wboss(Ngal+1)=float(wb)
                         out_wred(Ngal+1)=1.0
                         out_wcp(Ngal+1)=1.0
                         out_veto(Ngal+1)=veto
                         Ngal=Ngal+1
                     ELSE
+                        cptailcount=cptailcount+1
                         ran2=0.43+ran2*0.27
                         pz=tailnbar(ran2,Ntail,tailz,tailnbarz,tailsec)
-                        DO WHILE (pz .LT. ran1)
+                        DO WHILE (pz .le. ran1)
                             CALL RANDOM_NUMBER(ran1)
                             CALL RANDOM_NUMBER(ran2)
                             ran2=0.43+ran2*0.27
@@ -148,7 +154,7 @@
                         out_ra(Ngal+1)=ra
                         out_dec(Ngal+1)=dec
                         out_az(Ngal+1)=ran2
-                        out_wboss(Ngal+1)=wb
+                        out_wboss(Ngal+1)=float(wb)
                         out_wred(Ngal+1)=1.0
                         out_wcp(Ngal+1)=1.0
                         out_veto(Ngal+1)=veto
@@ -170,7 +176,8 @@
          enddo
  13      continue
          close(4)
-
+         WRITE(*,*) 'Total Number of Close Pairs=',cpcount
+         WRITE(*,*) 'Peak=',cppeakcount,'Tail=',cptailcount
          WRITE(*,*) 'Normal Wsys=',wwsys,'Normal Ngal=',wNgal
          WRITE(*,*) 'Corrected Wsys=',wsys,'Corrected Ngal=',Ngal
          WRITE(*,*) 'Ngal,sys=',wsys/float(Ngal)

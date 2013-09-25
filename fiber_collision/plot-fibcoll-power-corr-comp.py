@@ -22,23 +22,28 @@ for i in nrange:
     mockname_wb     = fname0+str(i+1000)[1:4]+'.v7.0.'+str(n)+'randoms.wboss.grid360.P020000.box3600'
     mockname_up     = fname0+str(i+1000)[1:4]+'.v7.0.'+str(n)+'randoms.upweight.grid360.P020000.box3600'
     mockname_peak   = fname0+str(i+1000)[1:4]+'.v7.0.'+str(n)+'randoms.peakcorr.grid360.P020000.box3600'
+    mockname_peakupw= fname0+str(i+1000)[1:4]+'.v7.0.'+str(n)+'randoms.peakcorrupw.grid360.P020000.box3600'
     
     mock_wb     = np.loadtxt(dir+mockname_wb)
     mock_up     = np.loadtxt(dir+mockname_up)
     mock_peak   = np.loadtxt(dir+mockname_peak)
+    mock_peakupw= np.loadtxt(dir+mockname_peakupw)
 
     if i==1:
         mock_k = mock_up[:,0]
         mock_wb_tot         = mock_wb[:,1]
         mock_up_tot         = mock_up[:,1]
         mock_peak_tot       = mock_peak[:,1]
+        mock_peakupw_tot    = mock_peakupw[:,1]
     else:
         mock_wb_tot         = mock_wb_tot + mock_wb[:,1]
         mock_up_tot         = mock_up_tot + mock_up[:,1]
-        mock_peak_tot       = mock_peak_tot+mock_peak[:,1]
+        mock_peak_tot       = mock_peak_tot + mock_peak[:,1]
+        mock_peakupw_tot    = mock_peakupw_tot + mock_peakupw[:,1]
 mock_wb_avg         = mock_wb_tot/float(n)
 mock_up_avg         = mock_up_tot/float(n)
 mock_peak_avg       = mock_peak_tot/float(n)
+mock_peakupw_avg    = mock_peakupw_tot/float(n)
 
 fig1 = plt.figure(1, figsize=(7,8))
 ax11 = fig1.add_subplot(111)
@@ -48,6 +53,8 @@ ax11.loglog( mock_k, mock_up_avg, color='b', linewidth=2,
         label=r"$\overline{P(k)}$ PTHalo NGC DR11 v7.0 $w_{upweighted}$")
 ax11.loglog( mock_k, mock_peak_avg, color='g', linewidth=2, 
         label=r"$\overline{P(k)}$ PTHalo NGC DR11 v7.0 Peak$+\bar{n}(z)$ Corrected")
+#ax11.loglog( mock_k, mock_peakupw_avg, color='m', linewidth=2, 
+#        label=r"$\overline{P(k)}$ PTHalo NGC DR11 v7.0 Peak$+\bar{n}(z) f_{\rm{peak}}=1$ Corrected")
 ax11.set_xlim([10**-3,10**0])
 ax11.set_ylim([10**2.75,10**5.1])
 ax11.set_xlabel('k',fontsize=20)

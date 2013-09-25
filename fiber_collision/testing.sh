@@ -32,4 +32,8 @@
 #file="fibcoll_nbar_comp.pro"
 #date -r $file +%F
 
-ipython testing.py "hello" "bye"
+#ipython testing.py "hello" "bye"
+nameend_peak=".v7.0.peakcorrupw.txt"
+n=${#nameend_peak}
+echo $n
+echo ${nameend_peak:0:$(($n-4))}
