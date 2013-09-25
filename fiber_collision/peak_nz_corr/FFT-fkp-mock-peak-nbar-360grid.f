@@ -1,51 +1,58 @@
       implicit none  !as FFT_FKP_SDSS_LRG_new but removes some hard-cored choices
-      integer Nsel,Nran,i,iwr,Ngal,Nmax,n,kx,ky,kz,Lm,Ngrid,ix,iy,iz,j,k
+      integer i,j,k,ii,jj,kk,n,nn
+      integer Nran,iwr,Ngal,Nmax,kx,ky,kz,Lm,Ngrid,ix,iy,iz
+      integer Nnz,Ntail,wNgal
       integer Ng,Nr,iflag,ic,Nbin,l,ipoly,wb,wcp,wred,flag
+      integer veto
       integer*8 planf
-      real pi,cspeed,Om0,OL0,redtru,m1,m2,zlo,zhi,garb1,garb2,garb3,veto
-      parameter(Nsel=201,Nmax=2*10**8,Ngrid=360,Nbin=151,pi=3.141592654)
+      real pi,cspeed,Om0,OL0,redtru,m1,m2
+      REAL zt,zlo,zhi,garb1,garb2,garb3
+      real cpz,cpnbarz
+      REAL sigma,peakfrac
+      PARAMETER(sigma=0.403852182,peakfrac=0.4687649365)
+      parameter(Nmax=2*10**8,Ngrid=360,Nbin=151,pi=3.141592654)
       parameter(Om0=0.27,OL0=0.73)
       integer grid
       dimension grid(3)
       parameter(cspeed=299800.0)
       integer, allocatable :: ig(:),ir(:)
-      real zbin(Nbin),dbin(Nbin),sec3(Nbin),zt,dum,gfrac
-      real cz,sec2(Nsel),chi,nbar,Rbox,wsys
-      real, allocatable :: nbg(:),nbr(:),rg(:,:),rr(:,:),wg(:),wr(:) 
-      real selfun(Nsel),z(Nsel),sec(Nsel),zmin,zmax,az,ra,dec,rad,numden
+      real dum,gfrac
+      real peakrt,peakprt,pr
+      real Rbox,wsys,wwsys,wsysr
+      real, allocatable :: nbg(:),nbr(:),rg(:,:),rr(:,:),wg(:),wr(:)
+      real, allocatable :: wwg(:)
+      REAL, ALLOCATABLE :: z(:),selfun(:),sec(:)
+      REAL, ALLOCATABLE :: dm(:),selfunchi(:),secchi(:)
+      REAL, ALLOCATABLE :: tailz(:),tailnbarz(:),tailsec(:)
+      REAL az,ra,dec,rad,numden,wbr,wcpr,wredr
+      REAL dlosrt,dlosprt
       real alpha,P0,nb,weight,ar,akf,Fr,Fi,Gr,Gi
       real*8 I10,I12,I22,I13,I23,I33
       real kdotr,vol,xscale,rlow,rm(2)
-      real rwb,rwcp,rwred
+      real ran1,ran2,ran3,pz
+      real chi,nbar,nbarchi,peakpofr,tailnbar
       complex, allocatable :: dcg(:,:,:),dcr(:,:,:)
 c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
       character selfunfile*200,lssfile*200,randomfile*200,filecoef*200
-      character spltest*200,nbarfile*200
+      CHARACTER peakfile*200,nbarfile*200,tailnbarfile*200
       character fname*200,fftname*200
       character Rboxstr*200,iflagstr*200,P0str*200
-      common /interpol/z,selfun,sec
-      common /interpol2/ra,sec2
-      common /interp3/dbin,zbin,sec3
-      common /Nrandom/Nran
       external nbar,chi,nbar2,PutIntoBox,assign2,fcomb
+      external peakpofr,nbarchi,tailnbar
       include '/home/users/hahn/powercode/fftw_f77.i'
+
       grid(1) = Ngrid
       grid(2) = Ngrid
       grid(3) = Ngrid
       call fftwnd_f77_create_plan(planf,3,grid,FFTW_BACKWARD,
      $     FFTW_ESTIMATE + FFTW_IN_PLACE)
 
-      zmax=1.1
-      do ic=1,Nbin
-         zt=zmax*float(ic-1)/float(Nbin-1)
-         zbin(ic)=zt
-         dbin(ic)=chi(zt)
-      enddo
-      call spline(dbin,zbin,Nbin,3e30,3e30,sec3)
-!Arguments: Rbox, Mock/Random, P0, File, FFT file
-!      write(*,*)'semibox side (like radius of sphere)'
-      call getarg(1,Rboxstr)
-      read(Rboxstr,*) Rbox
+      CALL getarg(1,Rboxstr)
+      READ(Rboxstr,*) Rbox
+      CALL getarg(2,iflagstr)
+      READ(iflagstr,*) iflag
+      CALL getarg(3,P0str) 
+      READ(P0str,*) P0
 
       Lm=Ngrid
       xscale=2.*RBox
@@ -53,90 +60,187 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
     
       rm(1)=float(Lm)/xscale
       rm(2)=1.-rlow*rm(1)
-      
-!      write(*,*)'mock (0) or random mock(1)?'
-      call getarg(2,iflagstr)
-      read(iflagstr,*) iflag
-
-!      write(*,*)'FKP weight P0?'
-      call getarg(3,P0str) 
-      read(P0str,*) P0
-        
       WRITE(*,*) 'Ngrid=',Ngrid,'Box=',xscale,'P0=',P0
-      call getarg(4,nbarfile)
+     
+      Nnz=0 
+      ALLOCATE(z(Nmax),selfun(Nmax),sec(Nmax))
+      ALLOCATE(dm(Nmax),selfunchi(Nmax),secchi(Nmax))
+      CALL getarg(4,nbarfile)
       open(unit=3,file=nbarfile,status='old',form='formatted')
-      do l=1,Nsel
+      do l=1,Nmax
             read(3,*,end=12) zt,zlo,zhi,numden,garb1,garb2,garb3
             z(l)= zt
+            dm(l)= chi(zt)
             selfun(l)=numden
+            selfunchi(l)=numden
+            Nnz=Nnz+1
       enddo
  12   continue
       close(3)
+      call spline(z,selfun,Nnz,3e30,3e30,sec)
+      call spline(dm,selfunchi,Nnz,3e30,3e30,secchi)
 
-      call spline(z,selfun,Nsel,3e30,3e30,sec)
-
-      if (iflag.eq.0) then ! run on mock
+      Ntail=0
+      ALLOCATE(tailz(Nmax),tailnbarz(Nmax),tailsec(Nmax))
+      CALL getarg(5,tailnbarfile)
+      OPEN(UNIT=6,FILE=tailnbarfile,STATUS='old',FORM='FORMATTED')
+      DO kk=1,Nmax
+            READ(6,*,END=115) cpz,cpnbarz
+            tailz(kk)=cpz
+            tailnbarz(kk)=cpnbarz   
+            Ntail=Ntail+1
+      ENDDO  
+ 115  CONTINUE 
+      CLOSE(6) 
+      CALL spline(tailz,tailnbarz,Ntail,3e30,3e30,tailsec)
       
-!         write(*,*)'Mock Survey File'
-         call getarg(5,lssfile)
-         allocate(rg(3,Nmax),nbg(Nmax),ig(Nmax),wg(Nmax))
+      if (iflag.eq.0) then ! run on mock
+         CALL getarg(6,lssfile)
+         allocate(rg(3,Nmax),nbg(Nmax),ig(Nmax),wg(Nmax),wwg(Nmax))
          open(unit=4,file=lssfile,status='old',form='formatted')
-         Ngal=0 !Ngal will get determined later after survey is put into a box (Ng)
+
+         Ngal=0 
+         wNgal=0
          wsys=0.0
-         do i=1,Nmax
-            read(4,*,end=13)ra,dec,az,ipoly,wb,wcp,wred,redtru,flag,m1
+         wwsys=0.0
+         CALL RANDOM_SEED
+         DO i=1,Nmax
+            READ(4,*,END=13)ra,dec,az,ipoly,wb,wcp,wred,redtru,flag,m1
      &      ,m2,veto
+            IF (wb.gt.0 .and. wcp.gt.0 .and. wred.gt.0 .and. veto.gt.0)
+     &      THEN
+                wwg(i)=float(wb)*(float(wcp)+float(wred)-1.0)
+            ELSE
+                wwg(i)=0.0
+            ENDIF
+            wNgal=wNgal+1
+            wwsys=wwsys+wwg(i)
+
             ra=ra*(pi/180.)
             dec=dec*(pi/180.)
-            rad=chi(az)
-            IF (wb.gt.0 .and. wcp.gt.0 .and. wred.gt.0 .and. 
+            IF (wcp.eq.1 .and. wb.gt.0 .and. wred.gt.0 .and. veto.gt.0) 
+     &      THEN 
+                rad=chi(az)
+                wg(Ngal+1)=float(wb)*(float(wcp)+float(wred)-1.0)
+                rg(1,Ngal+1)=rad*cos(dec)*cos(ra)
+                rg(2,Ngal+1)=rad*cos(dec)*sin(ra)
+                rg(3,Ngal+1)=rad*sin(dec)
+                nbg(Ngal+1)=nbar(az,Nnz,z,selfun,sec)
+                wsys=wsys+wg(Ngal+1)
+                Ngal=Ngal+1
+            ELSEIF (wcp.gt.1 .and. wb.gt.0 .and. wred.gt.0 .and. 
      &      veto.gt.0) THEN
-                wg(i)=float(wcp)+float(wred)-1.0
-            ELSE
-                wg(i)=0.0
+                rad=chi(az)
+                wg(Ngal+1)=float(wb)*float(wred)
+                rg(1,Ngal+1)=rad*cos(dec)*cos(ra)
+                rg(2,Ngal+1)=rad*cos(dec)*sin(ra)
+                rg(3,Ngal+1)=rad*sin(dec)
+                nbg(Ngal+1)=nbar(az,Nnz,z,selfun,sec)
+                wsys=wsys+wg(Ngal+1)
+                Ngal=Ngal+1
+                
+                DO WHILE (wcp .gt. 1)
+                    CALL RANDOM_NUMBER(ran1) 
+                    CALL RANDOM_NUMBER(ran2)
+                    CALL RANDOM_NUMBER(ran3)
+                    IF (ran3 .LT. peakfrac) THEN   ! Contained within the dLOS distribution peak.
+                        ran2=(-3.0+ran2*6.0)*sigma
+                        pr=peakpofr(ran2)
+                        DO WHILE (pr .le. ran1)
+                            CALL RANDOM_NUMBER(ran1)
+                            CALL RANDOM_NUMBER(ran2)
+                            ran2=(-3.0+ran2*6.0)*sigma
+                            pr=peakpofr(ran2)
+                        ENDDO
+                        rad=rad+ran2
+                        
+                        wcp=wcp-1 
+                        wg(Ngal+1)=float(wb)
+                        rg(1,Ngal+1)=rad*cos(dec)*cos(ra)
+                        rg(2,Ngal+1)=rad*cos(dec)*sin(ra)
+                        rg(3,Ngal+1)=rad*sin(dec)
+                        nbg(Ngal+1)=nbarchi(rad,Nnz,dm,selfunchi,
+     &                      secchi)
+                        wsys=wsys+wg(Ngal+1)
+                        Ngal=Ngal+1
+c                        WRITE(*,*) ran2,pr,rad,nbg(Ngal),wg(Ngal)
+                    ELSE
+                        ran2=0.43+ran2*0.27
+                        pz=tailnbar(ran2,Ntail,tailz,tailnbarz,tailsec)
+                        DO WHILE (pz .LT. ran1)
+                            CALL RANDOM_NUMBER(ran1)
+                            CALL RANDOM_NUMBER(ran2)
+                            ran2=0.43+ran2*0.27
+                            pz=tailnbar(ran2,Ntail,tailz,tailnbarz,
+     &                          tailsec)
+                        ENDDO
+                        rad=chi(ran2)
+                        
+                        wcp=wcp-1 
+                        wg(Ngal+1)=float(wb)
+                        rg(1,Ngal+1)=rad*cos(dec)*cos(ra)
+                        rg(2,Ngal+1)=rad*cos(dec)*sin(ra)
+                        rg(3,Ngal+1)=rad*sin(dec)
+                        nbg(Ngal+1)=nbarchi(rad,Nnz,dm,selfunchi,
+     &                      secchi)
+                        wsys=wsys+wg(Ngal+1)
+                        Ngal=Ngal+1
+c                        WRITE(*,*) ran2,pz,rad,nbg(Ngal),wg(Ngal)
+                    ENDIF 
+                ENDDO 
+            ELSE 
+                ra=ra*(pi/180.)
+                dec=dec*(pi/180.)
+                rad=chi(az)
+                wg(Ngal+1)=0.0
+                rg(1,Ngal+1)=rad*cos(dec)*cos(ra)
+                rg(2,Ngal+1)=rad*cos(dec)*sin(ra)
+                rg(3,Ngal+1)=rad*sin(dec)
+                nbg(Ngal+1)=nbar(az,Nnz,z,selfun,sec)
+                wsys=wsys+wg(Ngal+1)
+                Ngal=Ngal+1
             ENDIF
-            rg(1,i)=rad*cos(dec)*cos(ra)
-            rg(2,i)=rad*cos(dec)*sin(ra)
-            rg(3,i)=rad*sin(dec)
-            nbg(i)=nbar(az,iflag)
-            Ngal=Ngal+1
-            wsys=wsys+wg(i)
          enddo
  13      continue
          close(4)
 
-         WRITE(*,*) 'Wsys=',wsys,'Ngal,sys=',wsys/float(Ngal)
+         WRITE(*,*) 'Normal Wsys=',wwsys,'Normal Ngal=',wNgal
+         WRITE(*,*) 'Corrected Wsys=',wsys,'Corrected Ngal=',Ngal
+         WRITE(*,*) 'Ngal,sys=',wsys/float(Ngal)
+         
          call PutIntoBox(Ngal,rg,Rbox,ig,Ng,Nmax)
          gfrac=100. *float(Ng)/float(Ngal)
+         WRITE(*,*) 'Ngal,box=',Ng,'Ngal=',Ngal,gfrac,'percent'
 
          allocate(dcg(Ngrid,Ngrid,Ngrid))
          call assign(Ngal,rg,rm,Lm,dcg,P0,nbg,ig,wg)
          call fftwnd_f77_one(planf,dcg,dcg)      
          call fcomb(Lm,dcg,Ng)
 
-         call getarg(6,filecoef)
-         open(unit=4,file=filecoef,status='unknown',form='unformatted')
-         write(4)(((dcg(ix,iy,iz),ix=1,Lm/2+1),iy=1,Lm),iz=1,Lm)
-         write(4)P0,Ng,wsys 
-         close(4)
+         call getarg(7,filecoef)
+         open(unit=6,file=filecoef,status='unknown',form='unformatted')
+         write(6)(((dcg(ix,iy,iz),ix=1,Lm/2+1),iy=1,Lm),iz=1,Lm)
+         write(6)P0,Ng,wsys 
+         close(6)
 
-       elseif (iflag.eq.1) then ! compute discretness integrals and FFT random mock
-!         write(*,*)'Random Survey File'
-         call getarg(5,randomfile)
+       elseif (iflag.eq.1) then 
+         call getarg(6,randomfile)
          allocate(rr(3,Nmax),nbr(Nmax),ir(Nmax),wr(Nmax))
          open(unit=4,file=randomfile,status='old',form='formatted')
-         Nran=0 !Ngal will get determined later after survey is put into a box (Nr)
+         Nran=0 
+         wsysr=0.0
          do i=1,Nmax
-            read(4,*,end=15)ra,dec,az,rwb,rwcp,rwred
+            read(4,*,end=15)ra,dec,az,wbr,wcpr,wredr
             ra=ra*(pi/180.)
             dec=dec*(pi/180.)
             rad=chi(az)
             wr(i)=1.0
+            wsysr=wsysr+1.0
             Nran=Nran+1
             rr(1,i)=rad*cos(dec)*cos(ra)
             rr(2,i)=rad*cos(dec)*sin(ra)
             rr(3,i)=rad*sin(dec)
-            nbr(i)=nbar(az,iflag)
+            nbr(i)=nbar(az,Nnz,z,selfun,sec)
          enddo
  15      continue
          close(4)
@@ -166,20 +270,14 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
          call fftwnd_f77_one(planf,dcr,dcr)      
          call fcomb(Lm,dcr,Nr)
 
-!         write(*,*) 'Fourier file :'
-         call getarg(6,filecoef)
-         open(unit=4,file=filecoef,status='unknown',form='unformatted')
-         write(4)(((dcr(ix,iy,iz),ix=1,Lm/2+1),iy=1,Lm),iz=1,Lm)
-         write(4)real(I10),real(I12),real(I22),real(I13),real(I23),
+         call getarg(7,filecoef)
+         open(unit=6,file=filecoef,status='unknown',form='unformatted')
+         write(6)(((dcr(ix,iy,iz),ix=1,Lm/2+1),iy=1,Lm),iz=1,Lm)
+         write(6)real(I10),real(I12),real(I22),real(I13),real(I23),
      &   real(I33)
-         write(4)P0,Nr
-         close(4)
-         
+         write(6)P0,Nr,wsysr
+         close(6)
       endif
-      
-
- 1025 format(2x,6e14.6)
- 123  stop
       end
 c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
       Subroutine PutIntoBox(Ng,rg,Rbox,ig,Ng2,Nmax)
@@ -441,33 +539,48 @@ c
       return
       end
 c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-      REAL function nbar(QQ,iflag) !nbar(z)
+      REAL function nbar(QQ,N,z,selfun,sec) !nbar(z)
 c^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      parameter(Nsel=201)!80)
-      integer iflag
-      real z(Nsel),selfun(Nsel),sec(Nsel),self,az,qq,area_ang
-      common /interpol/z,selfun,sec
-      common/radint/Om0,OL0
-      common /zbounds/zmin,zmax
-      real Om0,OL0
-      external chi
+      INTEGER N
+      real z(N),selfun(N),sec(N),self,az,QQ
       az=QQ
-c      if (az.lt.zmin-0.05 .or. az.gt.0.47) then
-      if (az.lt.0.43 .or. az.gt.0.7) then
-         nbar=0.
+      if (az.lt.0.0 .or. az.gt.1.5) then
+         nbar=0.0
       else
-      call splint(z,selfun,sec,Nsel,az,self)
-         nbar=self 
+          call splint(z,selfun,sec,N,az,self)
+          nbar=self 
       endif
       RETURN
       END
 c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-      REAL function zdis(ar) !interpolation redshift(distance)
+      REAL function nbarchi(QQ,N,dm,selfunchi,secchi) !nbar(comdis)
 c^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      parameter(Nbin=151)
-      common /interp3/dbin,zbin,sec3
-      real dbin(Nbin),zbin(Nbin),sec3(Nbin)
-      call splint(dbin,zbin,sec3,Nbin,ar,zdis)
+      INTEGER N
+      real dm(N),selfunchi(N),secchi(N),self,ar,QQ
+      ar=QQ
+      call splint(dm,selfunchi,secchi,N,ar,self)
+      nbarchi=self 
+      RETURN
+      END
+c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      REAL function peakpofr(QQQ) !peakpofr(r)
+c^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      REAL sigma
+      PARAMETER(sigma=0.403852182)
+      REAL peakar,QQQ
+      peakar=QQQ
+      peakpofr=EXP(-1.0*ABS(peakar)/sigma) 
+      RETURN
+      END
+c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      REAL function tailnbar(QQQ,N,tailz,tailnbarz,tailsec)
+c^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      INTEGER N
+      REAL tailz(N),tailnbarz(N),tailsec(N)
+      REAL tailself,tailar,QQQ
+      tailar=QQQ
+      CALL splint(tailz,tailnbarz,tailsec,N,tailar,tailself)
+      tailnbar=tailself
       RETURN
       END
 c%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

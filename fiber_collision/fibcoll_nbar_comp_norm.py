@@ -162,14 +162,14 @@ fig5 = py.figure(5,figsize=(9,7))
 ax50 = fig5.add_subplot(111)
 ax50.text(0.45,1.015,str(n)+' Mocks',fontsize=18)
 ax50.plot(x_axis,ratio_rand_upw,'b',linewidth=3,
-        label=r'${\bar{n}(z)_{\rm{rand},\rm{upweight}}}/{\bar{n}(z)_{\rm{upweighted},\rm{PTHalo-v7.0}}}$') 
+        label=r'${\bar{n}(z)_{\rm{rand},\rm{upweight}}}/{\bar{n}(z)_{\rm{mock},\rm{upweighted}}}$') 
 #ax50.scatter(x_axis,ratio_rand_upw_v5p2,color='m',
 #        label=r'${\bar{n}(z)_{\rm{rand},\rm{PTHalo-v5.2}}}/{\bar{n}(z)_{\rm{upweighted},\rm{PTHalo-v5.2}}}$') 
 ax50.plot(x_axis,ratio_randp_peak,'k',linewidth=3,
-        label=r'${\bar{n}(z)_{\rm{rand},\rm{peak}+\bar{n}(z)}}/{\bar{n}(z)_{\rm{peak}+\bar{n}(z)}}$') 
+        label=r'${\bar{n}(z)_{\rm{rand},\rm{peak}+\bar{n}(z)}}/{\bar{n}(z)_{\rm{mock},\rm{peak}+\bar{n}(z)}}$') 
 ax50.set_xlim([0.43,0.7])
 ax50.set_ylim([0.975,1.025])
 ax50.set_xlabel('Redshift ($z$)',fontsize=18)
 ax50.set_ylabel(r'$\bar{n}(z)_{\rm{norm}}$ Ratio',fontsize=18) 
-ax50.legend(loc='best')
+ax50.legend(loc='best',prop={'size':16})
 py.show()

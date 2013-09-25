@@ -89,9 +89,8 @@ c      complex dcg(Ngrid,Ngrid,Ngrid),dcr(Ngrid,Ngrid,Ngrid)
             ra=ra*(pi/180.)
             dec=dec*(pi/180.)
             rad=chi(az)
-            IF (wb.gt.0 .and. wcp.gt.0 .and. wred.gt.0 .and. 
-     &      veto.gt.0) THEN
-                wg(i)=float(wcp)+float(wred)-1.0
+            IF (veto.gt.0) THEN
+                wg(i)=wb
             ELSE
                 wg(i)=0.0
             ENDIF
